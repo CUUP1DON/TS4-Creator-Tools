@@ -28,7 +28,7 @@ _Mesh:_
 - Merge By Distance: Remove doubles, merges vertices.
 - Subdivide REF Mesh: Subdivides the reference mesh for smoother weight and uv_1 transfer. Limit 10.
 - Delete REF Mesh: Deleted the reference mesh.
-- Set Cut Number: Sets the cut number for the currently selected mesh(s). Requires Sims 4 Studio's addon.
+- Set Cut Number: Sets the cut number for the currently selected mesh(s). _Requires Sims 4 Studio's addon._
 - Tris To Quads: Turns triangulated faces to quads.
 - Triangulate Faces: Triangulates faces of a mesh.
 
