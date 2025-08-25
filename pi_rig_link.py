@@ -11,10 +11,11 @@ def display_popup_list(popups):
 norig = "No armature containing 'rig' found in scene"
 linkrigsucc = "Mesh successfully linked to rig"
 multirig = "Multiple rigs found. Please select which rig to use:"
-no_mesh_selected = "Please select a mesh object"
+no_mesh_selected = "Please select at least one mesh object"
 already_linked = "Armature modifier already linked to a rig"
 modifier_updated = "Existing armature modifier updated with new rig"
 no_active_object = "No active object selected"
+meshes_linked = "meshes successfully linked to rig"
 
 # Shared function for linking mesh to rig
 def link_mesh_to_rig(obj, target_rig):
@@ -25,36 +26,22 @@ def link_mesh_to_rig(obj, target_rig):
             armature_modifier = modifier
             break
     
-    # If armature modifier exists, check if it's already linked to a rig
+    # If armature modifier exists, update it with the new rig
     if armature_modifier is not None:
-        if armature_modifier.object is not None:
-            # Check if the existing rig is different from the one we want to link
-            if armature_modifier.object == target_rig:
-                popups = [already_linked]
-                bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
-                return {'FINISHED'}
-            else:
-                # Update to new rig
-                armature_modifier.object = target_rig
-                popups = [modifier_updated]
-                bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
-                return {'FINISHED'}
+        if armature_modifier.object == target_rig:
+            # Already linked to the same rig, no action needed
+            return "already_linked"
         else:
-            # Armature modifier exists but has no rig linked
+            # Update to new rig (overwrite existing)
             armature_modifier.object = target_rig
-            popups = [linkrigsucc]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
-            return {'FINISHED'}
+            return "modifier_updated"
     
     # If no armature modifier exists, create one
     bpy.ops.object.modifier_add(type='ARMATURE')
     armature_modifier = obj.modifiers["Armature"]
     armature_modifier.object = target_rig
     
-    popups = [linkrigsucc]
-    bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
-
-    return {'FINISHED'}
+    return "linkrigsucc"
 
 
 # Link Rig
@@ -75,31 +62,41 @@ class linkrig(bpy.types.Operator):
             bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
             return {'CANCELLED'}
         
-        # Get the active object
-        obj = context.active_object
-        if not obj:
-            popups = [no_active_object]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
-            return {'CANCELLED'}
+        # Get all selected objects and filter for mesh objects
+        selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         
-        if obj.type != 'MESH':
+        if not selected_objects:
             popups = [no_mesh_selected]
             bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
             return {'CANCELLED'}
         
         # If multiple rigs found, invoke the rig selector
         if len(rig_objects) > 1:
-            # Store the mesh object for the rig selector to use
-            context.scene.linkrig_target_mesh = obj.name
+            # Store the selected mesh objects for the rig selector to use
+            context.scene.linkrig_target_meshes = ",".join([obj.name for obj in selected_objects])
             bpy.ops.object.select_rig('INVOKE_DEFAULT')
             return {'FINISHED'}
         
         # Use the first rig found if only one exists
         target_rig = rig_objects[0]
         
-        # Link the mesh to the rig
-        result = link_mesh_to_rig(obj, target_rig)
-        return result
+        # Link all selected meshes to the rig
+        linked_count = 0
+        for obj in selected_objects:
+            # Set the object as active to ensure modifier operations work correctly
+            context.view_layer.objects.active = obj
+            result = link_mesh_to_rig(obj, target_rig)
+            if result in ["linkrigsucc", "modifier_updated"]:
+                linked_count += 1
+        
+        # Display appropriate success message
+        if linked_count == 1:
+            popups = [linkrigsucc]
+        else:
+            popups = [f"{linked_count} {meshes_linked}"]
+        
+        bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+        return {'FINISHED'}
 
 
 # Rig Selector Operator
@@ -128,13 +125,21 @@ class TSCT_OT_select_rig(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
     
     def execute(self, context):
-        # Get the target mesh object
-        target_mesh_name = getattr(context.scene, 'linkrig_target_mesh', None)
-        if not target_mesh_name or target_mesh_name not in bpy.data.objects:
-            self.display_popup_error("Target mesh object not found")
+        # Get the target mesh objects
+        target_mesh_names = getattr(context.scene, 'linkrig_target_meshes', "")
+        if not target_mesh_names:
+            self.display_popup_error("Target mesh objects not found")
             return {'CANCELLED'}
         
-        target_mesh = bpy.data.objects[target_mesh_name]
+        mesh_names = target_mesh_names.split(",")
+        target_meshes = []
+        for name in mesh_names:
+            if name in bpy.data.objects:
+                target_meshes.append(bpy.data.objects[name])
+        
+        if not target_meshes:
+            self.display_popup_error("No valid target mesh objects found")
+            return {'CANCELLED'}
         
         # Get the selected rig
         if self.selected_rig not in bpy.data.objects:
@@ -143,13 +148,27 @@ class TSCT_OT_select_rig(bpy.types.Operator):
         
         selected_rig_obj = bpy.data.objects[self.selected_rig]
         
-        # Use the shared linking logic
-        result = link_mesh_to_rig(target_mesh, selected_rig_obj)
+        # Link all target meshes to the selected rig
+        linked_count = 0
+        for obj in target_meshes:
+            # Set the object as active to ensure modifier operations work correctly
+            context.view_layer.objects.active = obj
+            result = link_mesh_to_rig(obj, selected_rig_obj)
+            if result in ["linkrigsucc", "modifier_updated"]:
+                linked_count += 1
         
-        # Clean up the stored mesh name
-        context.scene.linkrig_target_mesh = ""
+        # Display appropriate success message
+        if linked_count == 1:
+            popups = [linkrigsucc]
+        else:
+            popups = [f"{linked_count} {meshes_linked}"]
         
-        return result
+        bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+        
+        # Clean up the stored mesh names
+        context.scene.linkrig_target_meshes = ""
+        
+        return {'FINISHED'}
     
     def display_popup_error(self, message):
         def popup(self, context):
@@ -162,16 +181,18 @@ def register():
     bpy.utils.register_class(linkrig)
     bpy.utils.register_class(TSCT_OT_select_rig)
     
-    # Add a property to store the target mesh name
+    # Add properties to store the target mesh names
     bpy.types.Scene.linkrig_target_mesh = bpy.props.StringProperty()
+    bpy.types.Scene.linkrig_target_meshes = bpy.props.StringProperty()
 
 
 def unregister():
     bpy.utils.unregister_class(linkrig)
     bpy.utils.unregister_class(TSCT_OT_select_rig)
     
-    # Remove the property
+    # Remove the properties
     del bpy.types.Scene.linkrig_target_mesh
+    del bpy.types.Scene.linkrig_target_meshes
 
 
 if __name__ == "__main__":

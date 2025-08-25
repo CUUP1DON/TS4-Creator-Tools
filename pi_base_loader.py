@@ -26,6 +26,7 @@ class TSCT_OT_load_body_base(Operator):
         description="Type of mesh to load",
         items=[
             ('Full', 'Full Body', 'Complete body mesh'),
+            ('Head', 'Head', 'Head mesh only'),
             ('Top', 'Top', 'Upper body mesh only'),
             ('Bottom', 'Bottom', 'Lower body mesh only'),
             ('Feet', 'Feet', 'Feet mesh only')
@@ -43,15 +44,58 @@ class TSCT_OT_load_body_base(Operator):
         # Get the addon directory
         addon_dir = os.path.dirname(os.path.realpath(__file__))
         assets_dir = os.path.join(addon_dir, "assets")
+        body_dir = os.path.join(assets_dir, "body")
+        head_dir = os.path.join(body_dir, "head")
+        feet_dir = os.path.join(body_dir, "feet")
+        bottom_dir = os.path.join(body_dir, "bottom")
+        top_dir = os.path.join(body_dir, "top")
+        full_dir = os.path.join(body_dir, "full")
         
         # Construct the blend file path
         blend_file = f"{self.body_type}_{self.mesh_type}.blend"
-        blend_path = os.path.join(assets_dir, blend_file)
+        
+        # Determine which directory to use based on mesh type
+        if self.mesh_type == 'Head':
+            blend_path = os.path.join(head_dir, blend_file)
+            search_location = "head folder"
+            fallback_dir = head_dir
+        elif self.mesh_type == 'Feet':
+            blend_path = os.path.join(feet_dir, blend_file)
+            search_location = "feet folder"
+            fallback_dir = feet_dir
+        elif self.mesh_type == 'Bottom':
+            blend_path = os.path.join(bottom_dir, blend_file)
+            search_location = "bottom folder"
+            fallback_dir = bottom_dir
+        elif self.mesh_type == 'Top':
+            blend_path = os.path.join(top_dir, blend_file)
+            search_location = "top folder"
+            fallback_dir = top_dir
+        elif self.mesh_type == 'Full':
+            blend_path = os.path.join(full_dir, blend_file)
+            search_location = "full folder"
+            fallback_dir = full_dir
+        else:
+            blend_path = os.path.join(assets_dir, blend_file)
+            search_location = "assets folder"
+            fallback_dir = None
         
         # Check if file exists
         if not os.path.exists(blend_path):
-            self.display_popup_error(f"Body base file not found: {blend_file}")
-            return {'CANCELLED'}
+            # Try assets folder as fallback for organized mesh types
+            if fallback_dir is not None:
+                fallback_path = os.path.join(assets_dir, blend_file)
+                if os.path.exists(fallback_path):
+                    blend_path = fallback_path
+                    search_location = "assets folder (fallback)"
+                else:
+                    self.display_popup_error(f"Body base file not found: {blend_file}\nSearched in: {search_location} and assets folder")
+                    return {'CANCELLED'}
+            else:
+                self.display_popup_error(f"Body base file not found: {blend_file}\nSearched in: {search_location}")
+                return {'CANCELLED'}
+        
+        print(f"Loading {blend_file} from {search_location}: {blend_path}")
         
         # Load the blend file
         try:
@@ -108,6 +152,7 @@ class TSCT_OT_load_body_base(Operator):
     def mesh_type_items(self):
         return [
             ('Full', 'Full Body'),
+            ('Head', 'Head'),
             ('Top', 'Top'),
             ('Bottom', 'Bottom'),
             ('Feet', 'Feet'),

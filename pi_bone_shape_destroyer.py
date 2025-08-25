@@ -57,6 +57,8 @@ class BoneShapeRemover(bpy.types.Operator):
 _handler_running = False
 _last_check_time = 0
 _last_object_count = 0
+_handlers_registered = False
+_timer_registered = False
 
 def remove_bone_shapes_handler(dummy):
     """Handler function for automatic removal on various operations"""
@@ -71,9 +73,9 @@ def remove_bone_shapes_handler(dummy):
     current_object_count = len(bpy.data.objects)
     
     # Only check if:
-    # 1. More than 1 second has passed since last check, AND
+    # 1. More than 0.3 seconds has passed since last check, AND
     # 2. The number of objects has changed (something was added/removed)
-    if (current_time - _last_check_time < 1.0) or (current_object_count == _last_object_count):
+    if (current_time - _last_check_time < 0.3) or (current_object_count == _last_object_count):
         return
     
     _handler_running = True
@@ -85,6 +87,28 @@ def remove_bone_shapes_handler(dummy):
         bpy.ops.object.remove_bone_shapes()
     finally:
         _handler_running = False
+
+def timer_check_bone_shapes():
+    """Timer function that periodically checks for bone shapes"""
+    global _handler_running
+    
+    if _handler_running:
+        return 0.5  # Check again in 0.5 seconds
+    
+    # Quick check if there are any bone shapes to remove
+    bone_shapes_found = False
+    for obj_name in bpy.data.objects.keys():
+        if obj_name.lower().startswith(('bone_shape', 'bone_bone_shape')):
+            bone_shapes_found = True
+            break
+    
+    if bone_shapes_found:
+        try:
+            bpy.ops.object.remove_bone_shapes()
+        except:
+            pass
+    
+    return 2.0  # Check again in 2 seconds
 
 def remove_bone_shapes_on_load(dummy):
     """Handler function specifically for file load operations"""
@@ -105,25 +129,68 @@ def remove_bone_shapes_on_load(dummy):
     finally:
         _handler_running = False
 
-def register():
-    bpy.utils.register_class(BoneShapeRemover)
+def ensure_handlers_registered():
+    """Ensure handlers are registered, even in existing files"""
+    global _handlers_registered, _timer_registered
     
-    # Register handlers for different operations
-    # File load - separate handler to always run on load
+    if _handlers_registered:
+        return
+    
+    # Clean up any existing handlers first to avoid duplicates
+    unregister_handlers()
+    
+    # Register multiple handlers to catch different events
     bpy.app.handlers.load_post.append(remove_bone_shapes_on_load)
-    
-    # This catches append and link operations with throttling
     bpy.app.handlers.depsgraph_update_post.append(remove_bone_shapes_handler)
-
-def unregister():
-    bpy.utils.unregister_class(BoneShapeRemover)
     
-    # Remove handlers
+    # Also register for scene update events
+    if hasattr(bpy.app.handlers, 'scene_update_post'):
+        bpy.app.handlers.scene_update_post.append(remove_bone_shapes_handler)
+    
+    # Add a timer that periodically checks for bone shapes
+    if not _timer_registered:
+        bpy.app.timers.register(timer_check_bone_shapes, first_interval=1.0)
+        _timer_registered = True
+    
+    _handlers_registered = True
+    print("Bone shape removal handlers registered")
+
+def unregister_handlers():
+    """Remove all handlers"""
+    global _handlers_registered, _timer_registered
+    
+    # Remove handlers if they exist
     if remove_bone_shapes_on_load in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(remove_bone_shapes_on_load)
     
     if remove_bone_shapes_handler in bpy.app.handlers.depsgraph_update_post:
         bpy.app.handlers.depsgraph_update_post.remove(remove_bone_shapes_handler)
+    
+    if hasattr(bpy.app.handlers, 'scene_update_post') and remove_bone_shapes_handler in bpy.app.handlers.scene_update_post:
+        bpy.app.handlers.scene_update_post.remove(remove_bone_shapes_handler)
+    
+    # Remove timer
+    if _timer_registered and bpy.app.timers.is_registered(timer_check_bone_shapes):
+        bpy.app.timers.unregister(timer_check_bone_shapes)
+        _timer_registered = False
+    
+    _handlers_registered = False
+
+def register():
+    bpy.utils.register_class(BoneShapeRemover)
+    
+    # Always ensure handlers are registered when this module is registered
+    ensure_handlers_registered()
+    
+    # Also run a check immediately in case we're in an existing file with bone shapes
+    try:
+        bpy.ops.object.remove_bone_shapes()
+    except:
+        pass  # Ignore errors if context isn't ready
+
+def unregister():
+    bpy.utils.unregister_class(BoneShapeRemover)
+    unregister_handlers()
 
 if __name__ == "__main__":
     register()

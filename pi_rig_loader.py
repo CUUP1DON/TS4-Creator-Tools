@@ -31,10 +31,11 @@ class TSCT_OT_load_rig(Operator):
         # Get the addon directory
         addon_dir = os.path.dirname(os.path.realpath(__file__))
         assets_dir = os.path.join(addon_dir, "assets")
+        rig_dir = os.path.join(assets_dir, "rig")
         
         # Construct the blend file path
         blend_file = f"{self.rig_type}_Rig.blend"
-        blend_path = os.path.join(assets_dir, blend_file)
+        blend_path = os.path.join(rig_dir, blend_file)
         
         # Check if file exists
         if not os.path.exists(blend_path):
@@ -48,53 +49,44 @@ class TSCT_OT_load_rig(Operator):
                 print(f"Available objects in {blend_file}: {list(data_from.objects)}")
                 print(f"Available armatures in {blend_file}: {list(data_from.armatures)}")
                 
-                # Look for armature objects that match the expected naming pattern
-                expected_rig_name = f"{self.rig_type}_Rig"
-                target_objects = [name for name in data_from.objects if expected_rig_name in name or "rig" in name.lower()]
+                # Filter to only load armature objects
+                armature_objects = [name for name in data_from.objects 
+                                  if any(obj_name == name for obj_name in data_from.objects) 
+                                  and name in [obj.name for obj in bpy.data.objects.values() 
+                                              if obj.type == 'ARMATURE'] 
+                                  or 'rig' in name.lower() or 'armature' in name.lower()]
                 
-                # If no exact match, try loading all armature objects from the file
-                if not target_objects:
-                    print(f"No objects found with name containing '{expected_rig_name}', loading all objects")
-                    target_objects = data_from.objects
-                
-                data_to.objects = target_objects
-                data_to.armatures = data_from.armatures
-                data_to.materials = data_from.materials
+                # If the filtering above is complex, let's simplify by just loading objects 
+                # and filtering them after based on type
+                data_to.objects = data_from.objects
+                data_to.armatures = data_from.armatures if data_from.armatures else []
             
-            # Add loaded objects to the scene
-            loaded_objects = []
+            # Add only armature objects to the scene
             loaded_armatures = []
             
             for obj in data_to.objects:
-                if obj is not None:
+                if obj is not None and obj.type == 'ARMATURE':
                     context.collection.objects.link(obj)
                     obj.select_set(True)
-                    loaded_objects.append(obj)
-                    
-                    # Check if it's an armature
-                    if obj.type == 'ARMATURE':
-                        loaded_armatures.append(obj)
+                    loaded_armatures.append(obj)
+                    print(f"Loaded armature: {obj.name}")
             
-            if loaded_objects:
-                # Set the first armature as active if available, otherwise the first object
-                if loaded_armatures:
-                    context.view_layer.objects.active = loaded_armatures[0]
-                else:
-                    context.view_layer.objects.active = loaded_objects[0]
+            if loaded_armatures:
+                # Set the first armature as active
+                context.view_layer.objects.active = loaded_armatures[0]
                 
                 rig_type_name = dict(self.rig_type_items)[self.rig_type]
-                if loaded_armatures:
-                    self.display_popup_success(f"{rig_type_name} rig loaded successfully. Loaded {len(loaded_armatures)} armature(s) and {len(loaded_objects)} total objects.")
-                else:
-                    self.display_popup_success(f"{rig_type_name} rig loaded successfully. Loaded {len(loaded_objects)} objects (no armatures detected).")
+                self.display_popup_success(f"{rig_type_name} rig loaded successfully. Loaded {len(loaded_armatures)} armature(s).")
+                return {'FINISHED'}
             else:
-                self.display_popup_error("No objects were loaded from the file.")
+                self.display_popup_error("No armatures found in the rig file.")
                 return {'CANCELLED'}
-            
-            return {'FINISHED'}
             
         except Exception as e:
             self.display_popup_error(f"Error loading rig: {str(e)}")
+            print(f"Full error details: {e}")
+            import traceback
+            traceback.print_exc()
             return {'CANCELLED'}
     
     @property
