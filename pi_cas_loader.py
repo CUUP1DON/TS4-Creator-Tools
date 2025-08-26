@@ -62,7 +62,7 @@ class TSCT_OT_load_cas(Operator):
                 ]
         elif self.cas_item == 'Pants':
             return [
-                ('', 'Pants', 'Full length pants'),
+                ('Pants', 'Pants', 'Full length pants'),
                 ('Shorts', 'Shorts', 'Short pants')
             ]
         elif self.cas_item == 'Shirt':
