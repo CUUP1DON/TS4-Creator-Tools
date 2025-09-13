@@ -41,7 +41,9 @@ _Transparency Fix:_
 
 _LOD Creation:_
 - Generate LOD Levels: Generates LODs of the s4studio_mesh_1 using the decimation modifier. Merge by distance before use. Adds them into their own collection. LOD1: 75% decimation, LOD2: 50% decimation, LOD3: 25% decimation.
-- Connect LOD Vertices: Will connect your mesh to EA's body LODs. Make sure vertices are close.
+- Mark LOD Connection Boundary: Will mark the vertices you want to join to EA's body LODs.
+- Clear LOD Connection Boundary: Will clear boundaries you marked.
+- Connect LOD Vertices: Will connect your mesh to EA's body LODs. Will merge vertices that are close together.
 - Wireframe Mode: For when you're trying to connect mesh seams. It's easier to see the vertices and turn on snap tool.
 
 _Vertex Paints:_ 
@@ -52,9 +54,9 @@ _Vertex Paints:_
 - Black: Disables slider use on meshes it's applied to.
 - White: For lamp glows.
 
-_Bakes:_ 
+_Bake:_ 
 - Create Bake Collection: Does what it says. Makes a collection to put the items you want to use to bake your shadow maps into a collection for import into blend files used for texture map bakes.
-- Open Shadow Map Bake: Creates a copy of a blend file you can use to bake shadow maps for your mesh.
+- Shadow Map: Creates and opens a copy of a blend file you can use to bake shadow maps for your mesh.
 
 ## TS4CT: Custom Importer
 
