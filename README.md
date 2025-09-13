@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > This addon was made using the help of claude.ai.
 
-## TS4 Creator Tools v1.7 (8.24.2025)
+## TS4 Creator Tools v1.8 (9.13.2025)
 
 _Asset Importer:_
 - Load Base Body: A directory of default bodies you can load. Includes: head, top, bottom, full body, and feet.
