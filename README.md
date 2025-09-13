@@ -77,7 +77,7 @@ _Rig:_
 - Link Rig: Will link a rig to your current mesh. Can Link multiple at once.
 
 _Animations:_
-- Load Animation: 
+- Load Animation: Does what it says :3
 - Clear Animation: Will remove action from currently selected rig and clear all pose transforms.
 
 _Settings:_
