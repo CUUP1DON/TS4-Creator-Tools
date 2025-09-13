@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import EnumProperty
+from . import pi_errors
 
 class siii_datatrans(bpy.types.Operator):
     bl_idname = "object.siii_datatrans"
@@ -27,21 +28,37 @@ class siii_datatrans(bpy.types.Operator):
         obj_target = bpy.data.objects.get("s4studio_mesh_1")
         
         if not obj_ref:
-            popups = [ref_not_found]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('file_not_found',
+                custom_message="REF object not found",
+                custom_details=["Load a REF object first",
+                               "Make sure REF object is visible"])
             return {'CANCELLED'}
             
         if not obj_target:
-            popups = [sfs_not_found]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('file_not_found',
+                custom_message="s4studio_mesh_1 object not found",
+                custom_details=["Make sure S4Studio mesh is in your scene",
+                               "Check object naming and visibility"])
             return {'CANCELLED'}
             
         if 'uv_1' not in obj_ref.data.uv_layers:
-            self.display_popup_error("REF does not have a uv_1.")
+            pi_errors.ErrorManager.show_error('validation_error',
+                custom_message="REF object missing UV map",
+                custom_details=[
+                    "REF does not have a uv_1 UV map",
+                    "Run UV Checker on the REF object first",
+                    "Make sure the REF has proper UV mapping"
+                ])
             return {'CANCELLED'}
             
         if 'uv_1' not in obj_target.data.uv_layers:
-            self.display_popup_error("s4studio_mesh_1 does not have a uv_1 UV map. Please run the UV checker!")
+            pi_errors.ErrorManager.show_error('validation_error',
+                custom_message="S4Studio mesh missing UV map",
+                custom_details=[
+                    "s4studio_mesh_1 does not have a uv_1 UV map",
+                    "Please run the UV Checker on your mesh first",
+                    "This will create the required UV maps"
+                ])
             return {'CANCELLED'}
         
         self.apply_data_transfer(obj_target, obj_ref)
@@ -52,9 +69,7 @@ class siii_datatrans(bpy.types.Operator):
         return context.window_manager.invoke_props_dialog(self)
     
     def display_popup_error(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='ERROR')
+        pi_errors.ErrorManager.show_error('validation_error', custom_message=message)
     
     def apply_data_transfer(self, obj_target, obj_ref):
         bpy.context.view_layer.objects.active = obj_target
@@ -66,7 +81,17 @@ class siii_datatrans(bpy.types.Operator):
             ref_corners = len(obj_ref.data.loops)
             
             if target_corners != ref_corners:
-                self.display_popup_error(f"Topology mapping requires meshes with the same face corner count. Target: {target_corners}, REF: {ref_corners}")
+                pi_errors.ErrorManager.show_error('topology_mismatch',
+                    custom_message="Topology mapping requires identical mesh structure",
+                    custom_details=[
+                        f"Target mesh corners: {target_corners}",
+                        f"REF mesh corners: {ref_corners}",
+                        "",
+                        "Solutions:",
+                        "• Use a different mapping method",
+                        "• Ensure both meshes have identical topology",
+                        "• Try 'Nearest Face Interpolated' instead"
+                    ])
                 return
         
         bpy.ops.object.modifier_add(type='DATA_TRANSFER')
@@ -83,9 +108,12 @@ class siii_datatrans(bpy.types.Operator):
         self.display_popup_success()
     
     def display_popup_success(self):
-        def popup(self, context):
-            self.layout.label(text="Good to go!")
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='INFO')
+        pi_errors.ErrorManager.show_success('operation_complete',
+            custom_message="UV data transfer completed!",
+            custom_details=[
+                "uv_1 data has been transferred from REF to your mesh",
+                "Your mesh is now ready for texturing"
+            ])
 
 def register():
     bpy.utils.register_class(siii_datatrans)
@@ -93,58 +121,57 @@ def register():
 def unregister():
     bpy.utils.unregister_class(siii_datatrans)
 
-# Popups
+# Legacy popup functions (kept for compatibility)
 def select_obj(self, context):
-    self.layout.label(text="Please select or unhide your object.")
+    pi_errors.show_no_object_selected()
 
 def exit_edit(self, context):
-    self.layout.label(text="Exit Edit Mode first.")
+    pi_errors.show_exit_edit_mode()
 
 def sfs_not_found(self, context):
-    self.layout.label(text="s4studio_mesh_1 not found.")
+    pi_errors.ErrorManager.show_error('file_not_found',
+                                     custom_message="s4studio_mesh_1 not found.")
 
 def ref_not_found(self, context):
-    self.layout.label(text="REF not found.")
+    pi_errors.ErrorManager.show_error('file_not_found',
+                                     custom_message="REF not found.")
 
 def no_weight_groups(self, context):
-    self.layout.label(text="Object you're trying to transfer from has no weight groups!")
+    pi_errors.show_error('no_weight_groups')
 
 def weight_trans(self, context):
-    self.layout.label(text="Weights transferred. REF mesh removed.")
+    pi_errors.show_weights_transferred()
 
 def sub_succ(self, context):
-    self.layout.label(text="REF subdivided.")
+    pi_errors.show_success('mesh_subdivided')
 
 def wesmo(self, context):
-    self.layout.label(text="Weights smoothed.")
+    pi_errors.show_success('weights_smoothed')
 
 def wesmonog(self, context):
-    self.layout.label(text="No weight groups.")
+    pi_errors.show_error('no_weight_groups')
 
 def limwesucc(self, context):
-    self.layout.label(text="Number of weights per vertex limited.")
+    pi_errors.show_success('weights_limited')
 
 def rbmbdsucc(self, context):
-    self.layout.label(text="Removed doubles.")
+    pi_errors.show_success('doubles_removed')
 
 def ttqsucc(self, context):
-    self.layout.label(text="Changed faces.")
+    pi_errors.show_success('faces_converted')
 
 def linkrigsucc(self, context):
-    self.layout.label(text="Linked rig.")
+    pi_errors.show_success('rig_linked')
 
 def norig(self, context):
-    self.layout.label(text="Cannot find rig, please make sure it is in your scene.")
+    pi_errors.show_no_rig_found()
 
 def topology_error(self, context):
-    self.layout.label(text="Topology mapping requires meshes with the same face corner count.")
+    pi_errors.ErrorManager.show_error('topology_mismatch')
 
 def display_popup_list(popups):
-    def draw(self, context):
-        layout = self.layout
-        for popup in popups:
-            popup(self, context)
-    return draw
+    """Legacy support function maintained for compatibility"""
+    return pi_errors.display_popup_list(popups)
 
 if __name__ == "__main__":
     register()

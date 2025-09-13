@@ -72,6 +72,7 @@ class MESH_OT_generate_lod_levels(Operator):
             decimate_mod = lod_obj.modifiers.new(name=f"Decimate_LOD_{lod_level}", type='DECIMATE')
             decimate_mod.decimate_type = 'COLLAPSE'
             decimate_mod.ratio = ratio
+            decimate_mod.use_collapse_triangulate = False  # Prevent edge splitting during collapse
             
             # Apply the modifier
             bpy.context.view_layer.objects.active = lod_obj

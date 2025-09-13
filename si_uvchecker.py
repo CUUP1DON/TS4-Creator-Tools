@@ -1,4 +1,5 @@
 import bpy
+from . import pi_errors
 
 # UV Checker Operator
 class si_uvchecker(bpy.types.Operator):
@@ -9,11 +10,28 @@ class si_uvchecker(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.ed.undo_push(message="Creator Tools: UV Checker")
        
-        bpy.ops.object.mode_set(mode='OBJECT')
+        # Check if there's an active object before changing modes
         obj = context.view_layer.objects.active
-       
         if obj is None:
-            self.report({'ERROR'}, "Please select or unhide your object.")
+            pi_errors.show_no_object_selected()
+            return {'CANCELLED'}
+            
+        # Validate object type
+        if obj.type != 'MESH':
+            pi_errors.show_error('wrong_object_type')
+            return {'CANCELLED'}
+        
+        # Now it's safe to change modes
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+        except Exception as e:
+            pi_errors.ErrorManager.show_error('blender_context_error',
+                custom_message="Cannot switch to Object Mode",
+                custom_details=[
+                    "Make sure you have an active object selected",
+                    "Try selecting the object again"
+                ],
+                additional_info=[f"Error: {str(e)}"])
             return {'CANCELLED'}
         
         # Switch to edit mode
@@ -65,11 +83,14 @@ class si_uvchecker(bpy.types.Operator):
                     uv_1_exists = True
                 renamed_uv_map = True
         
+        # Determine what happened and show appropriate message
+        details = []
+        
         # Create uv_0 if it doesn't exist
         if not renamed_uv_map and not uv_0_exists:
             obj.data.uv_layers.new(name="uv_0")
             print("Created UV map 'uv_0' for object: {}".format(obj.name))
-            popup_messages.append(lambda self, context: self.layout.label(text="uv_0 was created - Make sure you unwrapped your UVs!"))
+            details.append("uv_0 was created - Make sure you unwrapped your UVs!")
         elif not renamed_uv_map and uv_0_exists:
             print("UV map 'uv_0' already exists for object: {}".format(obj.name))
             maps_already_exist = True
@@ -78,7 +99,7 @@ class si_uvchecker(bpy.types.Operator):
         if not uv_1_exists:
             obj.data.uv_layers.new(name="uv_1")
             print("Created UV map 'uv_1' for object: {}".format(obj.name))
-            popup_messages.append(lambda self, context: self.layout.label(text="uv_1 was created (not transferred)."))
+            details.append("uv_1 was created (not transferred)")
         
         if uv_1_exists and uv_0_exists:
             print("UV map 'uv_1' already exists for object: {}".format(obj.name))
@@ -86,27 +107,24 @@ class si_uvchecker(bpy.types.Operator):
         
         # Prepare messages
         if renamed_uv_map:
-            popup_messages.append(lambda self, context: self.layout.label(text="Existing uv map renamed."))
+            details.append("Existing UV map renamed")
         
-        if maps_already_exist:
-            popup_messages.append(lambda self, context: self.layout.label(text="Good to go!"))
+        if maps_already_exist and not details:
+            details.append("UV maps are already properly configured")
         
-        # Display popup messages if any
-        if popup_messages:
-            bpy.context.window_manager.popup_menu(display_popup_list(popup_messages), title="Creator Tools", icon='INFO')
+        # Show success message with details
+        if details:
+            pi_errors.ErrorManager.show_success('uv_setup_complete',
+                custom_details=details)
         
         # Exit edit mode after running the UV checker
         bpy.ops.object.mode_set(mode='OBJECT')
         
         return {'FINISHED'}
 
-# Popup helper functions
+# Legacy popup helper function (kept for compatibility)
 def display_popup_list(popups):
-    def draw(self, context):
-        layout = self.layout
-        for popup in popups:
-            popup(self, context)
-    return draw
+    return pi_errors.display_popup_list(popups)
 
 # Register and unregister functions
 def register():

@@ -1,4 +1,5 @@
 import bpy
+from . import pi_errors
 
 class BoneShapeRemover(bpy.types.Operator):
     bl_idname = "object.remove_bone_shapes"
@@ -32,7 +33,8 @@ class BoneShapeRemover(bpy.types.Operator):
                 print(f"Failed to remove object {obj_name}: {e}")
         
         if removed_count > 0:
-            self.report({'INFO'}, f"Removed {removed_count} bone shape objects")
+            pi_errors.ErrorManager.report(self, 'operation_complete', 'INFO',
+                                         custom_message=f"Removed {removed_count} bone shape objects")
         return {'FINISHED'}
     
     def is_bone_shape_object(self, name):
@@ -156,22 +158,35 @@ def ensure_handlers_registered():
     print("Bone shape removal handlers registered")
 
 def unregister_handlers():
-    """Remove all handlers"""
+    """Remove all handlers with improved error handling"""
     global _handlers_registered, _timer_registered
     
-    # Remove handlers if they exist
-    if remove_bone_shapes_on_load in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(remove_bone_shapes_on_load)
+    # Remove handlers with error handling
+    try:
+        if remove_bone_shapes_on_load in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.remove(remove_bone_shapes_on_load)
+    except (ValueError, AttributeError):
+        pass
     
-    if remove_bone_shapes_handler in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.remove(remove_bone_shapes_handler)
+    try:
+        if remove_bone_shapes_handler in bpy.app.handlers.depsgraph_update_post:
+            bpy.app.handlers.depsgraph_update_post.remove(remove_bone_shapes_handler)
+    except (ValueError, AttributeError):
+        pass
     
-    if hasattr(bpy.app.handlers, 'scene_update_post') and remove_bone_shapes_handler in bpy.app.handlers.scene_update_post:
-        bpy.app.handlers.scene_update_post.remove(remove_bone_shapes_handler)
+    try:
+        if hasattr(bpy.app.handlers, 'scene_update_post') and remove_bone_shapes_handler in bpy.app.handlers.scene_update_post:
+            bpy.app.handlers.scene_update_post.remove(remove_bone_shapes_handler)
+    except (ValueError, AttributeError):
+        pass
     
-    # Remove timer
-    if _timer_registered and bpy.app.timers.is_registered(timer_check_bone_shapes):
-        bpy.app.timers.unregister(timer_check_bone_shapes)
+    # Remove timer with error handling
+    try:
+        if _timer_registered and bpy.app.timers.is_registered(timer_check_bone_shapes):
+            bpy.app.timers.unregister(timer_check_bone_shapes)
+    except Exception:
+        pass
+    finally:
         _timer_registered = False
     
     _handlers_registered = False
@@ -189,8 +204,14 @@ def register():
         pass  # Ignore errors if context isn't ready
 
 def unregister():
-    bpy.utils.unregister_class(BoneShapeRemover)
+    # Clean up handlers first to prevent memory leaks
     unregister_handlers()
+    
+    # Unregister class with error handling
+    try:
+        bpy.utils.unregister_class(BoneShapeRemover)
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     register()

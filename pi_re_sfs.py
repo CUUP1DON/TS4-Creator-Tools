@@ -1,4 +1,5 @@
 import bpy
+from . import pi_errors
 
 def resfs(context):  # Added context argument
     # Get selected objects
@@ -6,13 +7,21 @@ def resfs(context):  # Added context argument
 
     # Check if exactly one object is selected
     if len(selected_objects) != 1:
-        bpy.context.window_manager.popup_menu(lambda self, context: self.layout.label(text="Please select an object."), title="Creator Tools", icon='ERROR')
+        pi_errors.ErrorManager.show_error('no_object_selected',
+            custom_message="Please select exactly one object",
+            custom_details=[
+                "Select the mesh you want to rename to 's4studio_mesh_1'",
+                "Only one object can be renamed at a time"
+            ])
     else:
         # Get the selected object
         selected_object = selected_objects[0]
 
         # Rename the object
         selected_object.name = "s4studio_mesh_1"
+        pi_errors.ErrorManager.show_success('operation_complete',
+            custom_message=f"Object renamed to 's4studio_mesh_1'",
+            custom_details=["The selected object is now named 's4studio_mesh_1'"])
 
 class RefRename(bpy.types.Operator):
     """Tooltip"""
@@ -24,9 +33,9 @@ class RefRename(bpy.types.Operator):
         return {'FINISHED'}
 
 def register():
-    bpy.utils.register_class(resfs)
+    bpy.utils.register_class(RefRename)
 
 def unregister():
-    bpy.utils.unregister_class(resfs)
+    bpy.utils.unregister_class(RefRename)
     
  

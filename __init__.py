@@ -4,6 +4,7 @@ from bpy.types import AddonPreferences
 from bpy.props import StringProperty, CollectionProperty, BoolProperty, IntProperty
 
 # Add custom Imports Here
+from . import pi_errors
 from . import si_uvchecker
 from . import pi_prereq
 from . import pi_bone_shape_destroyer
@@ -15,11 +16,13 @@ from . import pi_rig_link
 from . import pi_mesh
 from . import pi_cutnum
 from . import pi_datatransfer
-from . import pi_wiresnap   
+from . import pi_wiresnap
 from . import lodeci
 from . import pi_cas_loader
 from . import pi_anim_loader
 from . import pi_lodconnect
+from . import pi_transparency
+from . import pi_bakes
 
 #Custom Loader
 from . import ci_asset_management
@@ -33,7 +36,7 @@ from . import ci_rig_loader
 bl_info = {
     "name": "TS4 Creator Tools",
     "author": "CUUPIDON",
-    "version": (1, 7),
+    "version": (1, 8),
     "blender": (3, 6, 9),
     "location": "View3D > Sidebar > TS4CT",
     "description": "Tools to take tedium out of the work flow.",
@@ -243,10 +246,19 @@ class CUUPID_PT_creator_tools(bpy.types.Panel):
         weights_menu.operator("object.smoothwe", text="Smooth Weights")
         weights_menu.operator("object.limwe", text="Limit Weights")
         
-# LOD Creation
+        # Transparency Fix
+        transparency_menu = layout.box().column()
+        transparency_menu.label(text="Transparency Fix", icon='MATERIAL')
+        transparency_menu.operator("mesh.mark_strip", text="Mark Strip Boundary")
+        transparency_menu.operator("mesh.clear_strip", text="Clear Strip Boundary")
+        transparency_menu.operator("mesh.transparency_fix", text="Fix Transparency")
+
+        # LOD Creation
         lod_menu = layout.box().column()
         lod_menu.label(text="LOD Creation", icon='SNAP_VERTEX')
         lod_menu.operator("mesh.generate_lod_levels", text="Generate LOD Levels")
+        lod_menu.operator("mesh.mark_lod_vertices", text="Mark LOD Vertices")
+        lod_menu.operator("mesh.clear_lod_vertices", text="Clear LOD Vertices")
         lod_menu.operator("mesh.connect_lod_vertices", text="Connect LOD Vertices")
         
         # Dynamic wireframe toggle button
@@ -264,6 +276,12 @@ class CUUPID_PT_creator_tools(bpy.types.Panel):
         vertex_paints_menu.operator("object.vtc_hairacc", text="Hair Acc")
         vertex_paints_menu.operator("object.vtc_black", text="Black/NONE")
         vertex_paints_menu.operator("object.vtc_white", text="White/Lamp Glow")
+
+        # Bakes
+        bakes_menu = layout.box().column()
+        bakes_menu.label(text="Bakes", icon='SHADING_RENDERED')
+        bakes_menu.operator("tsct.create_shadow_bake_collection", text="Create Bake Collection")
+        bakes_menu.operator("tsct.open_shadow_bake", text="Open Shadow Bake")
 
 # Custom Asset Importer Panel (separate tab)
 class TS4CT_PT_custom_importer(bpy.types.Panel):
@@ -345,6 +363,9 @@ def register():
     pi_cas_loader.register()
     pi_anim_loader.register()
     pi_lodconnect.register()
+    pi_transparency.register()
+    pi_bakes.register()
+    pi_errors.register() if hasattr(pi_errors, 'register') else None
     
 #customloader
     ci_asset_management.register()
@@ -379,6 +400,9 @@ def unregister():
     pi_cas_loader.unregister()
     pi_anim_loader.unregister()
     pi_lodconnect.unregister()
+    pi_transparency.unregister()
+    pi_bakes.unregister()
+    pi_errors.unregister() if hasattr(pi_errors, 'unregister') else None
     
 #customloader
     ci_asset_management.unregister()
@@ -392,52 +416,55 @@ def unregister():
 if __name__ == "__main__":
     register()
 
-# Popup Functions
+# Legacy Popup Functions (kept for compatibility during migration)
 def select_obj(self, context):
-    self.layout.label(text="Please select or unhide your object.")
+    pi_errors.show_no_object_selected()
 
 def exit_edit(self, context):
-    self.layout.label(text="Exit Edit Mode first.")
+    pi_errors.show_exit_edit_mode()
 
 def sfs_not_found(self, context):
-    self.layout.label(text="s4studio_mesh_1 not found.")
+    pi_errors.ErrorManager.show_error('file_not_found',
+                                     custom_message="s4studio_mesh_1 not found.",
+                                     custom_details=["Make sure S4Studio mesh is in your scene",
+                                                   "Check object naming and visibility"])
 
 def ref_not_found(self, context):
-    self.layout.label(text="REF not found.")
+    pi_errors.ErrorManager.show_error('file_not_found',
+                                     custom_message="REF object not found.",
+                                     custom_details=["Load a REF object first",
+                                                   "Make sure REF object is visible"])
 
 def no_weight_groups(self, context):
-    self.layout.label(text="Object you're trying to transfer from has no weight groups!")
+    pi_errors.show_error('no_weight_groups')
 
 def weight_trans(self, context):
-    self.layout.label(text="Weights transferred. REF mesh removed.")
+    pi_errors.show_weights_transferred()
 
 def sub_succ(self, context):
-    self.layout.label(text="REF subdivided.")
+    pi_errors.show_success('mesh_subdivided')
 
 def wesmo(self, context):
-    self.layout.label(text="Weights smoothed.")
+    pi_errors.show_success('weights_smoothed')
 
 def wesmonog(self, context):
-    self.layout.label(text="No weight groups.")
+    pi_errors.show_error('no_weight_groups')
 
 def limwesucc(self, context):
-    self.layout.label(text="Number of weights per vertex limited.")
+    pi_errors.show_success('weights_limited')
 
 def rbmbdsucc(self, context):
-    self.layout.label(text="Removed doubles.")
+    pi_errors.show_success('doubles_removed')
 
 def ttqsucc(self, context):
-    self.layout.label(text="Changed faces.")
+    pi_errors.show_success('faces_converted')
 
 def linkrigsucc(self, context):
-    self.layout.label(text="Linked rig.")
+    pi_errors.show_success('rig_linked')
 
 def norig(self, context):
-    self.layout.label(text="Cannot find rig, please make sure it is in your scene.")
+    pi_errors.show_no_rig_found()
 
 def display_popup_list(popups):
-    def draw(self, context):
-        layout = self.layout
-        for popup in popups:
-            popup(self, context)
-    return draw
+    """Legacy support function - maintained for compatibility"""
+    return pi_errors.display_popup_list(popups)

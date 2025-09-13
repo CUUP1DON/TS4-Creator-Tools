@@ -1,23 +1,5 @@
 import bpy
-
-# Popup messages - you may need to adjust these based on your existing popup system
-def display_popup_list(popups):
-    def draw(self, context):
-        for popup in popups:
-            self.layout.label(text=popup)
-    return draw
-
-# Define popup messages (adjust these to match your existing ones)
-sfs_not_found = "s4studio_mesh_1 object not found"
-ref_not_found = "REF object not found"
-no_weight_groups = "REF object has no vertex groups"
-weight_trans = "Weight transfer completed successfully"
-wesmo = "Weights smoothed successfully"
-wesmonog = "No mesh data found or object not valid"
-select_obj = "Please select an object and enter weight paint mode"
-limwesucc = "Weight limit applied successfully"
-no_vertex_groups = "Selected object has no vertex groups to limit"
-ref_deleted = "REF mesh deleted successfully"
+from . import pi_errors
 
 # Weight Transfer
 class siiii_weights(bpy.types.Operator):
@@ -28,20 +10,23 @@ class siiii_weights(bpy.types.Operator):
     def execute(self, context):
         obj = bpy.data.objects.get("s4studio_mesh_1")
         if obj is None:
-            popups = [sfs_not_found]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('file_not_found',
+                custom_message="s4studio_mesh_1 object not found",
+                custom_details=["Make sure S4Studio mesh is in your scene",
+                               "Check object naming and visibility"])
             return {'CANCELLED'}
             
         obj = bpy.data.objects.get("REF")
         if obj is None:
-            popups = [ref_not_found]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('file_not_found',
+                custom_message="REF object not found",
+                custom_details=["Load a REF object first",
+                               "Make sure REF object is visible"])
             return {'CANCELLED'}
             
         obj = bpy.data.objects.get("REF")
         if obj and not obj.vertex_groups:
-            popups = [no_weight_groups]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_error('no_weight_groups')
             return {'CANCELLED'}
             
         self.siiii_weights()
@@ -86,8 +71,7 @@ class siiii_weights(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         
         # REF mesh deletion removed from here
-        popups = [weight_trans]
-        bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+        pi_errors.show_weights_transferred()
 
 
 # Delete REF Mesh
@@ -101,11 +85,14 @@ class delete_ref_mesh(bpy.types.Operator):
         if mesh_ref:
             bpy.ops.ed.undo_push(message="Creator Tools: Delete REF Mesh")
             bpy.data.objects.remove(mesh_ref, do_unlink=True)
-            popups = [ref_deleted]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+            pi_errors.ErrorManager.show_success('operation_complete',
+                custom_message="REF mesh deleted successfully",
+                custom_details=["The reference mesh has been removed from the scene"])
         else:
-            popups = [ref_not_found]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('file_not_found',
+                custom_message="REF object not found",
+                custom_details=["No REF mesh to delete",
+                               "Make sure REF object exists in the scene"])
             return {'CANCELLED'}
             
         return {'FINISHED'}
@@ -119,28 +106,76 @@ class smoothwe(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.ed.undo_push(message="Creator Tools: Smooth Weights")
-        bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
+        
+        # Validate active object before attempting mode change
+        if not context.active_object:
+            pi_errors.ErrorManager.show_error('no_object_selected',
+                custom_message="No object selected for weight smoothing",
+                custom_details=[
+                    "Select a mesh object with vertex groups",
+                    "Make sure the object is rigged or has weight data"
+                ])
+            return {'CANCELLED'}
+            
+        obj = context.active_object
+        if obj.type != 'MESH':
+            pi_errors.show_error('wrong_object_type')
+            return {'CANCELLED'}
+            
+        # Check if object has vertex groups
+        if not obj.vertex_groups:
+            pi_errors.ErrorManager.show_error('no_weight_groups',
+                custom_message="Object has no vertex groups to smooth",
+                custom_details=[
+                    "The object needs to be rigged or have weight data",
+                    "Use the weight transfer tool first if needed"
+                ])
+            return {'CANCELLED'}
+        
+        try:
+            # Now safe to change modes
+            bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
+        except Exception as e:
+            pi_errors.ErrorManager.show_error('blender_context_error',
+                custom_message="Cannot enter Weight Paint mode",
+                custom_details=[
+                    "Make sure the object is properly selected",
+                    "Try clicking on the object again"
+                ],
+                additional_info=[f"Error: {str(e)}"])
+            return {'CANCELLED'}
 
         if context.active_object and context.active_object.mode == 'WEIGHT_PAINT':
             obj = context.active_object
             if obj.type == 'MESH' and obj.data.vertices:
-                # Disable mirror if it's enabled
-                if obj.data.use_mirror_x:
-                    obj.data.use_mirror_x = False
-                if obj.data.use_mirror_y:
-                    obj.data.use_mirror_y = False
-                if obj.data.use_mirror_z:
-                    obj.data.use_mirror_z = False
-                bpy.ops.object.vertex_group_smooth(group_select_mode='ALL', factor=0.5, repeat=3)
-                popups = [wesmo]
-                bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+                try:
+                    # Disable mirror if it's enabled
+                    if obj.data.use_mirror_x:
+                        obj.data.use_mirror_x = False
+                    if obj.data.use_mirror_y:
+                        obj.data.use_mirror_y = False
+                    if obj.data.use_mirror_z:
+                        obj.data.use_mirror_z = False
+                    bpy.ops.object.vertex_group_smooth(group_select_mode='ALL', factor=0.5, repeat=3)
+                    pi_errors.show_success('weights_smoothed')
+                except Exception as e:
+                    pi_errors.ErrorManager.show_error('operation_failed',
+                        custom_message="Failed to smooth weights",
+                        additional_info=[f"Error: {str(e)}"])
+                    return {'CANCELLED'}
             else:
-                popups = [wesmonog]
-                bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+                pi_errors.ErrorManager.show_error('no_weight_groups',
+                    custom_message="No mesh data found or object not valid",
+                    custom_details=["Make sure you have a valid mesh object",
+                                   "Check that the object has proper mesh data"])
                 return {'CANCELLED'}
         else:
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('blender_context_error',
+                custom_message="Could not enter Weight Paint mode",
+                custom_details=[
+                    "The object may not support weight painting",
+                    "Make sure you have a rigged mesh selected"
+                ])
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -163,33 +198,76 @@ class limwe(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.ed.undo_push(message="Limit Weights Per Vertex")
 
-        # Check if the active object is valid and in weight paint mode
+        # Validate active object before checking mode
+        if not context.active_object:
+            pi_errors.ErrorManager.show_error('no_object_selected',
+                custom_message="No object selected for weight limiting",
+                custom_details=[
+                    "Select a mesh object with vertex groups",
+                    "Make sure the object is rigged or has weight data"
+                ])
+            return {'CANCELLED'}
+            
+        obj = context.active_object
+        if obj.type != 'MESH':
+            pi_errors.show_error('wrong_object_type')
+            return {'CANCELLED'}
+            
+        # Check if object has vertex groups
+        if not obj.vertex_groups:
+            pi_errors.ErrorManager.show_error('no_weight_groups',
+                custom_message="Selected object has no vertex groups to limit",
+                custom_details=["The object needs vertex groups to limit weights",
+                               "Make sure the object has been rigged or has weight data"])
+            return {'CANCELLED'}
+
+        # Check if already in weight paint mode, if not try to enter it
+        if context.active_object.mode != 'WEIGHT_PAINT':
+            try:
+                bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
+            except Exception as e:
+                pi_errors.ErrorManager.show_error('blender_context_error',
+                    custom_message="Cannot enter Weight Paint mode",
+                    custom_details=[
+                        "Make sure the object is properly selected",
+                        "The object needs to be rigged to enter Weight Paint mode",
+                        "Try selecting the object again"
+                    ],
+                    additional_info=[f"Error: {str(e)}"])
+                return {'CANCELLED'}
+
+        # Now we're in weight paint mode, perform the operation
         if context.active_object and context.active_object.mode == 'WEIGHT_PAINT':
             obj = context.active_object
-
-            # Check if the object has vertex data
             if obj.type == 'MESH' and obj.data.vertices:
-                # Check if the object has vertex groups
-                if not obj.vertex_groups:
-                    popups = [no_vertex_groups]
-                    bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+                try:
+                    # Limit weights per vertex using the given count
+                    bpy.ops.object.vertex_group_limit_total(limit=self.limit_count)
+
+                    # Show success message
+                    pi_errors.ErrorManager.show_success('weights_limited',
+                        custom_message=f"Limited weights to {self.limit_count} per vertex",
+                        custom_details=[
+                            "Each vertex now influences a maximum number of bones",
+                            "This improves performance and prevents deformation issues"
+                        ])
+                    return {'FINISHED'}
+                except Exception as e:
+                    pi_errors.ErrorManager.show_error('operation_failed',
+                        custom_message="Failed to limit vertex weights",
+                        additional_info=[f"Error: {str(e)}"])
                     return {'CANCELLED'}
-                
-                # Limit weights per vertex using the given count
-                bpy.ops.object.vertex_group_limit_total(limit=self.limit_count)
-
-                # Show success message
-                popups = [limwesucc]
-                bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
-                return {'FINISHED'}
             else:
-                popups = [wesmonog]
-                bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+                pi_errors.ErrorManager.show_error('invalid_mesh_data')
+                return {'CANCELLED'}
         else:
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
-
-        return {'CANCELLED'}
+            pi_errors.ErrorManager.show_error('blender_context_error',
+                custom_message="Could not access Weight Paint mode",
+                custom_details=[
+                    "The object may not support weight painting",
+                    "Make sure you have a rigged mesh selected"
+                ])
+            return {'CANCELLED'}
 
     def invoke(self, context, event):
         wm = context.window_manager

@@ -1,0 +1,9 @@
+This file will open as a TEMP file. Please be sure to
+SAVE if you plan to return to it.
+
+Instructions
+ 1. Import your mesh.
+ 2. Select the body it uses in the outliner.
+ 3. Enable it for rendering.
+ 3. Click one of the image nodes below.
+ 4. Bake.

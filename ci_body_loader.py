@@ -90,24 +90,30 @@ class BaseCustomLoader(Operator):
                 
                 # Process objects - they should already be properly organized in their collections
                 for obj in data_to.objects:
-                    if obj is not None and obj.type not in {'CAMERA', 'LIGHT'}:
-                        obj.select_set(True)
-                        loaded_objects.append(obj)
-                        
-                        if obj.type == 'ARMATURE':
-                            special_objects.append(obj)
+                    if obj is not None:
+                        # Check if object name contains s4studio_mesh (accounting for Blender's .001, .002 suffixes)
+                        obj_base_name = obj.name.split('.')[0]  # Remove .001, .002, etc suffixes
+                        if obj_base_name.startswith('s4studio_mesh') and obj.type == 'MESH':
+                            obj.select_set(True)
+                            loaded_objects.append(obj)
+                            
+                            if obj.type == 'ARMATURE':
+                                special_objects.append(obj)
             else:
                 # No collections in blend file - create our own and add objects to it
                 target_collection = get_or_create_collection(asset_name, type_collection)
                 
                 for obj in data_to.objects:
-                    if obj is not None and obj.type not in {'CAMERA', 'LIGHT'}:
-                        target_collection.objects.link(obj)
-                        obj.select_set(True)
-                        loaded_objects.append(obj)
-                        
-                        if obj.type == 'ARMATURE':
-                            special_objects.append(obj)
+                    if obj is not None:
+                        # Check if object name contains s4studio_mesh (accounting for Blender's .001, .002 suffixes)
+                        obj_base_name = obj.name.split('.')[0]  # Remove .001, .002, etc suffixes
+                        if obj_base_name.startswith('s4studio_mesh') and obj.type == 'MESH':
+                            target_collection.objects.link(obj)
+                            obj.select_set(True)
+                            loaded_objects.append(obj)
+                            
+                            if obj.type == 'ARMATURE':
+                                special_objects.append(obj)
             
             if loaded_objects:
                 # Set active object

@@ -1,24 +1,11 @@
 import bpy
-
-# Popup messages - you may need to adjust these based on your existing popup system
-def display_popup_list(popups):
-    def draw(self, context):
-        for popup in popups:
-            self.layout.label(text=popup)
-    return draw
-
-# Define popup messages (adjust these to match your existing ones)
-norig = "No armature containing 'rig' found in scene"
-linkrigsucc = "Mesh successfully linked to rig"
-multirig = "Multiple rigs found. Please select which rig to use:"
-no_mesh_selected = "Please select at least one mesh object"
-already_linked = "Armature modifier already linked to a rig"
-modifier_updated = "Existing armature modifier updated with new rig"
-no_active_object = "No active object selected"
-meshes_linked = "meshes successfully linked to rig"
+from . import pi_errors
 
 # Shared function for linking mesh to rig
-def link_mesh_to_rig(obj, target_rig):
+def link_mesh_to_rig(obj, target_rig, context):
+    # Set object as active before any operations
+    context.view_layer.objects.active = obj
+    
     # Check if object already has an armature modifier
     armature_modifier = None
     for modifier in obj.modifiers:
@@ -37,11 +24,13 @@ def link_mesh_to_rig(obj, target_rig):
             return "modifier_updated"
     
     # If no armature modifier exists, create one
-    bpy.ops.object.modifier_add(type='ARMATURE')
-    armature_modifier = obj.modifiers["Armature"]
-    armature_modifier.object = target_rig
-    
-    return "linkrigsucc"
+    try:
+        bpy.ops.object.modifier_add(type='ARMATURE')
+        armature_modifier = obj.modifiers["Armature"]
+        armature_modifier.object = target_rig
+        return "linkrigsucc"
+    except RuntimeError:
+        return "modifier_failed"
 
 
 # Link Rig
@@ -52,22 +41,27 @@ class linkrig(bpy.types.Operator):
 
     def execute(self, context):
         bpy.ops.ed.undo_push(message="Creator Tools: Link Rig")
-        bpy.ops.object.mode_set(mode='OBJECT')
+        
+        # Ensure we're in object mode with proper context validation
+        if context.active_object:
+            try:
+                bpy.ops.object.mode_set(mode='OBJECT')
+            except RuntimeError:
+                # Context might be invalid, but continue
+                pass
 
         # Find all armatures containing 'rig' in their name
         rig_objects = [obj for obj in bpy.data.objects if obj.type == 'ARMATURE' and 'rig' in obj.name.lower()]
         
         if not rig_objects:
-            popups = [norig]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('rig_not_found')
             return {'CANCELLED'}
         
         # Get all selected objects and filter for mesh objects
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         
         if not selected_objects:
-            popups = [no_mesh_selected]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('no_mesh_selected')
             return {'CANCELLED'}
         
         # If multiple rigs found, invoke the rig selector
@@ -82,20 +76,24 @@ class linkrig(bpy.types.Operator):
         
         # Link all selected meshes to the rig
         linked_count = 0
+        failed_count = 0
         for obj in selected_objects:
-            # Set the object as active to ensure modifier operations work correctly
-            context.view_layer.objects.active = obj
-            result = link_mesh_to_rig(obj, target_rig)
+            result = link_mesh_to_rig(obj, target_rig, context)
             if result in ["linkrigsucc", "modifier_updated"]:
                 linked_count += 1
+            else:
+                failed_count += 1
         
         # Display appropriate success message
-        if linked_count == 1:
-            popups = [linkrigsucc]
-        else:
-            popups = [f"{linked_count} {meshes_linked}"]
+        if linked_count > 0:
+            if linked_count == 1:
+                pi_errors.ErrorManager.show_success('rig_linked_single')
+            else:
+                pi_errors.ErrorManager.show_success('rig_linked_multiple', count=linked_count)
         
-        bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+        if failed_count > 0:
+            pi_errors.ErrorManager.show_error('rig_link_partial_failure', failed=failed_count, success=linked_count)
+            
         return {'FINISHED'}
 
 
@@ -128,7 +126,7 @@ class TSCT_OT_select_rig(bpy.types.Operator):
         # Get the target mesh objects
         target_mesh_names = getattr(context.scene, 'linkrig_target_meshes', "")
         if not target_mesh_names:
-            self.display_popup_error("Target mesh objects not found")
+            pi_errors.ErrorManager.show_error('rig_target_meshes_not_found')
             return {'CANCELLED'}
         
         mesh_names = target_mesh_names.split(",")
@@ -138,42 +136,40 @@ class TSCT_OT_select_rig(bpy.types.Operator):
                 target_meshes.append(bpy.data.objects[name])
         
         if not target_meshes:
-            self.display_popup_error("No valid target mesh objects found")
+            pi_errors.ErrorManager.show_error('rig_valid_meshes_not_found')
             return {'CANCELLED'}
         
         # Get the selected rig
         if self.selected_rig not in bpy.data.objects:
-            self.display_popup_error("Selected rig not found")
+            pi_errors.ErrorManager.show_error('selected_rig_not_found')
             return {'CANCELLED'}
         
         selected_rig_obj = bpy.data.objects[self.selected_rig]
         
         # Link all target meshes to the selected rig
         linked_count = 0
+        failed_count = 0
         for obj in target_meshes:
-            # Set the object as active to ensure modifier operations work correctly
-            context.view_layer.objects.active = obj
-            result = link_mesh_to_rig(obj, selected_rig_obj)
+            result = link_mesh_to_rig(obj, selected_rig_obj, context)
             if result in ["linkrigsucc", "modifier_updated"]:
                 linked_count += 1
+            else:
+                failed_count += 1
         
         # Display appropriate success message
-        if linked_count == 1:
-            popups = [linkrigsucc]
-        else:
-            popups = [f"{linked_count} {meshes_linked}"]
+        if linked_count > 0:
+            if linked_count == 1:
+                pi_errors.ErrorManager.show_success('rig_linked_single')
+            else:
+                pi_errors.ErrorManager.show_success('rig_linked_multiple', count=linked_count)
         
-        bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+        if failed_count > 0:
+            pi_errors.ErrorManager.show_error('rig_link_partial_failure', failed=failed_count, success=linked_count)
         
         # Clean up the stored mesh names
         context.scene.linkrig_target_meshes = ""
         
         return {'FINISHED'}
-    
-    def display_popup_error(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='ERROR')
 
 
 # Registration

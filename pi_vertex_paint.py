@@ -1,4 +1,5 @@
 import bpy
+from . import pi_errors
 
 # Vertex Colors
 class vtc_skintight(bpy.types.Operator):
@@ -9,7 +10,7 @@ class vtc_skintight(bpy.types.Operator):
     def execute(self, context):
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         if not selected_objects:
-            self.report({'ERROR'}, "No mesh objects selected")
+            pi_errors.show_no_mesh_selected()
             return {'CANCELLED'}
 
         self.vtc_skintight(context, selected_objects)
@@ -17,12 +18,6 @@ class vtc_skintight(bpy.types.Operator):
 
     def vtc_skintight(self, context, objects):
         bpy.ops.ed.undo_push(message="Creator Tools: Vertex Color: ST")
-        
-        def display_vertex_success(self, context):
-            self.layout.label(text=f"Changed vertex color to Skin Tight on {len(objects)} object(s).")
-        
-        def display_vertex_failure(self, context):
-            self.layout.label(text="Cannot find mesh objects.")
 
         success_count = 0
         for obj in objects:
@@ -33,15 +28,30 @@ class vtc_skintight(bpy.types.Operator):
                     vcol_layer = obj.data.vertex_colors.active
                 else:
                     vcol_layer = obj.data.vertex_colors.new()
-                for poly in obj.data.polygons:
+                # Check if paint mask or vertex selection mode is active
+                mesh = obj.data
+                use_paint_mask = mesh.use_paint_mask
+                use_paint_mask_vertex = mesh.use_paint_mask_vertex
+                
+                for poly in mesh.polygons:
+                    # Skip if paint mask is enabled and face is not selected
+                    if use_paint_mask and not poly.select:
+                        continue
+                        
                     for loop_index in poly.loop_indices:
+                        # Skip if vertex selection mask is enabled and vertex is not selected
+                        if use_paint_mask_vertex:
+                            vertex_index = mesh.loops[loop_index].vertex_index
+                            if not mesh.vertices[vertex_index].select:
+                                continue
+                        
                         vcol_layer.data[loop_index].color = (0.0, 1.0, 0.0, 1.0)
                 success_count += 1
         
         if success_count > 0:
-            bpy.context.window_manager.popup_menu(display_vertex_success, title="Creator Tools", icon='INFO')
+            pi_errors.show_vertex_color_applied(count=success_count, color_type="Skin Tight")
         else:
-            bpy.context.window_manager.popup_menu(display_vertex_failure, title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_mesh_selected()
 
 class vtc_robemorph(bpy.types.Operator):
     bl_idname = "object.vtc_robemorph"
@@ -52,19 +62,13 @@ class vtc_robemorph(bpy.types.Operator):
         bpy.ops.ed.undo_push(message="Creator Tools: Vertex Color: RM")
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         if not selected_objects:
-            self.report({'ERROR'}, "No mesh objects selected")
+            pi_errors.show_no_mesh_selected()
             return {'CANCELLED'}
 
         self.vtc_robemorph(context, selected_objects)
         return {'FINISHED'}
 
     def vtc_robemorph(self, context, objects):
-        def display_vertex_success(self, context):
-            self.layout.label(text=f"Changed vertex color to Robe Morph on {len(objects)} object(s).")
-        
-        def display_vertex_failure(self, context):
-            self.layout.label(text="Cannot find mesh objects.")
-
         success_count = 0
         for obj in objects:
             if obj is not None and obj.type == 'MESH':
@@ -75,15 +79,30 @@ class vtc_robemorph(bpy.types.Operator):
                 else:
                     vcol_layer = obj.data.vertex_colors.new()
                     
-                for poly in obj.data.polygons:
+                # Check if paint mask or vertex selection mode is active
+                mesh = obj.data
+                use_paint_mask = mesh.use_paint_mask
+                use_paint_mask_vertex = mesh.use_paint_mask_vertex
+                
+                for poly in mesh.polygons:
+                    # Skip if paint mask is enabled and face is not selected
+                    if use_paint_mask and not poly.select:
+                        continue
+                        
                     for loop_index in poly.loop_indices:
+                        # Skip if vertex selection mask is enabled and vertex is not selected
+                        if use_paint_mask_vertex:
+                            vertex_index = mesh.loops[loop_index].vertex_index
+                            if not mesh.vertices[vertex_index].select:
+                                continue
+                        
                         vcol_layer.data[loop_index].color = (0.247059, 0.941177, 0.0, 1.0)
                 success_count += 1
         
         if success_count > 0:
-            bpy.context.window_manager.popup_menu(display_vertex_success, title="Creator Tools", icon='INFO')
+            pi_errors.show_vertex_color_applied(count=success_count, color_type="Robe Morph")
         else:
-            bpy.context.window_manager.popup_menu(display_vertex_failure, title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_mesh_selected()
 
 class vtc_hairline(bpy.types.Operator):
     bl_idname = "object.vtc_hairline"
@@ -94,19 +113,13 @@ class vtc_hairline(bpy.types.Operator):
         bpy.ops.ed.undo_push(message="Creator Tools: Vertex Color: HL")
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         if not selected_objects:
-            self.report({'ERROR'}, "No mesh objects selected")
+            pi_errors.show_no_mesh_selected()
             return {'CANCELLED'}
 
         self.vtc_hairline(context, selected_objects)
         return {'FINISHED'}
 
     def vtc_hairline(self, context, objects):
-        def display_vertex_success(self, context):
-            self.layout.label(text=f"Changed vertex color to Hairline on {len(objects)} object(s).")
-        
-        def display_vertex_failure(self, context):
-            self.layout.label(text="Cannot find mesh objects.")
-
         success_count = 0
         for obj in objects:
             if obj is not None and obj.type == 'MESH':
@@ -117,15 +130,30 @@ class vtc_hairline(bpy.types.Operator):
                 else:
                     vcol_layer = obj.data.vertex_colors.new()
                     
-                for poly in obj.data.polygons:
+                # Check if paint mask or vertex selection mode is active
+                mesh = obj.data
+                use_paint_mask = mesh.use_paint_mask
+                use_paint_mask_vertex = mesh.use_paint_mask_vertex
+                
+                for poly in mesh.polygons:
+                    # Skip if paint mask is enabled and face is not selected
+                    if use_paint_mask and not poly.select:
+                        continue
+                        
                     for loop_index in poly.loop_indices:
+                        # Skip if vertex selection mask is enabled and vertex is not selected
+                        if use_paint_mask_vertex:
+                            vertex_index = mesh.loops[loop_index].vertex_index
+                            if not mesh.vertices[vertex_index].select:
+                                continue
+                        
                         vcol_layer.data[loop_index].color = (0.0, 0.498039, 0.247059, 1.0)
                 success_count += 1
         
         if success_count > 0:
-            bpy.context.window_manager.popup_menu(display_vertex_success, title="Creator Tools", icon='INFO')
+            pi_errors.show_vertex_color_applied(count=success_count, color_type="Hairline")
         else:
-            bpy.context.window_manager.popup_menu(display_vertex_failure, title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_mesh_selected()
 
 class vtc_hairacc(bpy.types.Operator):
     bl_idname = "object.vtc_hairacc"
@@ -136,19 +164,13 @@ class vtc_hairacc(bpy.types.Operator):
         bpy.ops.ed.undo_push(message="Creator Tools: Vertex Color: HA")
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         if not selected_objects:
-            self.report({'ERROR'}, "No mesh objects selected")
+            pi_errors.show_no_mesh_selected()
             return {'CANCELLED'}
 
         self.vtc_hairacc(context, selected_objects)
         return {'FINISHED'}
 
     def vtc_hairacc(self, context, objects):
-        def display_vertex_success(self, context):
-            self.layout.label(text=f"Changed vertex color to Hair Acc on {len(objects)} object(s).")
-        
-        def display_vertex_failure(self, context):
-            self.layout.label(text="Cannot find mesh objects.")
-
         success_count = 0
         for obj in objects:
             if obj is not None and obj.type == 'MESH':
@@ -159,15 +181,30 @@ class vtc_hairacc(bpy.types.Operator):
                 else:
                     vcol_layer = obj.data.vertex_colors.new()
                     
-                for poly in obj.data.polygons:
+                # Check if paint mask or vertex selection mode is active
+                mesh = obj.data
+                use_paint_mask = mesh.use_paint_mask
+                use_paint_mask_vertex = mesh.use_paint_mask_vertex
+                
+                for poly in mesh.polygons:
+                    # Skip if paint mask is enabled and face is not selected
+                    if use_paint_mask and not poly.select:
+                        continue
+                        
                     for loop_index in poly.loop_indices:
+                        # Skip if vertex selection mask is enabled and vertex is not selected
+                        if use_paint_mask_vertex:
+                            vertex_index = mesh.loops[loop_index].vertex_index
+                            if not mesh.vertices[vertex_index].select:
+                                continue
+                        
                         vcol_layer.data[loop_index].color = (0.0, 0.498039, 0.0, 1.0)
                 success_count += 1
         
         if success_count > 0:
-            bpy.context.window_manager.popup_menu(display_vertex_success, title="Creator Tools", icon='INFO')
+            pi_errors.show_vertex_color_applied(count=success_count, color_type="Hair Accessory")
         else:
-            bpy.context.window_manager.popup_menu(display_vertex_failure, title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_mesh_selected()
 
 class vtc_black(bpy.types.Operator):
     bl_idname = "object.vtc_black"
@@ -177,7 +214,7 @@ class vtc_black(bpy.types.Operator):
     def execute(self, context):
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         if not selected_objects:
-            self.report({'ERROR'}, "No mesh objects selected")
+            pi_errors.show_no_mesh_selected()
             return {'CANCELLED'}
 
         self.vtc_black(context, selected_objects)
@@ -185,12 +222,6 @@ class vtc_black(bpy.types.Operator):
 
     def vtc_black(self, context, objects):
         bpy.ops.ed.undo_push(message="Creator Tools: Vertex Color: Black")
-        
-        def display_vertex_success(self, context):
-            self.layout.label(text=f"Changed vertex color to black on {len(objects)} object(s).")
-        
-        def display_vertex_failure(self, context):
-            self.layout.label(text="Cannot find mesh objects.")
 
         success_count = 0
         for obj in objects:
@@ -201,15 +232,30 @@ class vtc_black(bpy.types.Operator):
                     vcol_layer = obj.data.vertex_colors.active
                 else:
                     vcol_layer = obj.data.vertex_colors.new()
-                for poly in obj.data.polygons:
+                # Check if paint mask or vertex selection mode is active
+                mesh = obj.data
+                use_paint_mask = mesh.use_paint_mask
+                use_paint_mask_vertex = mesh.use_paint_mask_vertex
+                
+                for poly in mesh.polygons:
+                    # Skip if paint mask is enabled and face is not selected
+                    if use_paint_mask and not poly.select:
+                        continue
+                        
                     for loop_index in poly.loop_indices:
+                        # Skip if vertex selection mask is enabled and vertex is not selected
+                        if use_paint_mask_vertex:
+                            vertex_index = mesh.loops[loop_index].vertex_index
+                            if not mesh.vertices[vertex_index].select:
+                                continue
+                        
                         vcol_layer.data[loop_index].color = (0.0, 0.0, 0.0, 0.0)
                 success_count += 1
         
         if success_count > 0:
-            bpy.context.window_manager.popup_menu(display_vertex_success, title="Creator Tools", icon='INFO')
+            pi_errors.show_vertex_color_applied(count=success_count, color_type="Black/None")
         else:
-            bpy.context.window_manager.popup_menu(display_vertex_failure, title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_mesh_selected()
 
 class vtc_white(bpy.types.Operator):
     bl_idname = "object.vtc_white"
@@ -219,7 +265,7 @@ class vtc_white(bpy.types.Operator):
     def execute(self, context):
         selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         if not selected_objects:
-            self.report({'ERROR'}, "No mesh objects selected")
+            pi_errors.show_no_mesh_selected()
             return {'CANCELLED'}
 
         self.vtc_white(context, selected_objects)
@@ -227,12 +273,6 @@ class vtc_white(bpy.types.Operator):
 
     def vtc_white(self, context, objects):
         bpy.ops.ed.undo_push(message="Creator Tools: Vertex Color: White")
-        
-        def display_vertex_success(self, context):
-            self.layout.label(text=f"Changed vertex color to white on {len(objects)} object(s).")
-        
-        def display_vertex_failure(self, context):
-            self.layout.label(text="Cannot find mesh objects.")
 
         success_count = 0
         for obj in objects:
@@ -243,15 +283,30 @@ class vtc_white(bpy.types.Operator):
                     vcol_layer = obj.data.vertex_colors.active
                 else:
                     vcol_layer = obj.data.vertex_colors.new()
-                for poly in obj.data.polygons:
+                # Check if paint mask or vertex selection mode is active
+                mesh = obj.data
+                use_paint_mask = mesh.use_paint_mask
+                use_paint_mask_vertex = mesh.use_paint_mask_vertex
+                
+                for poly in mesh.polygons:
+                    # Skip if paint mask is enabled and face is not selected
+                    if use_paint_mask and not poly.select:
+                        continue
+                        
                     for loop_index in poly.loop_indices:
+                        # Skip if vertex selection mask is enabled and vertex is not selected
+                        if use_paint_mask_vertex:
+                            vertex_index = mesh.loops[loop_index].vertex_index
+                            if not mesh.vertices[vertex_index].select:
+                                continue
+                        
                         vcol_layer.data[loop_index].color = (1.0, 1.0, 1.0, 1.0)
                 success_count += 1
         
         if success_count > 0:
-            bpy.context.window_manager.popup_menu(display_vertex_success, title="Creator Tools", icon='INFO')
+            pi_errors.show_vertex_color_applied(count=success_count, color_type="White/Lamp Glow")
         else:
-            bpy.context.window_manager.popup_menu(display_vertex_failure, title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_mesh_selected()
 
 # Registration
 classes = [

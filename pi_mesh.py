@@ -1,54 +1,54 @@
 import bpy
+from . import pi_errors
 
-# Popup message functions
+# Legacy popup functions (kept for compatibility)
 def select_obj(self, context):
-    self.layout.label(text="Please select or unhide your object.")
+    pi_errors.show_no_object_selected()
 
 def exit_edit(self, context):
-    self.layout.label(text="Exit Edit Mode first.")
+    pi_errors.show_exit_edit_mode()
 
 def sfs_not_found(self, context):
-    self.layout.label(text="s4studio_mesh_1 not found.")
+    pi_errors.ErrorManager.show_error('file_not_found',
+                                     custom_message="s4studio_mesh_1 not found.")
 
 def ref_not_found(self, context):
-    self.layout.label(text="REF not found.")
+    pi_errors.ErrorManager.show_error('file_not_found',
+                                     custom_message="REF not found.")
 
 def no_weight_groups(self, context):
-    self.layout.label(text="Object you're trying to transfer from has no weight groups!")
+    pi_errors.show_error('no_weight_groups')
 
 def weight_trans(self, context):
-    self.layout.label(text="Weights transferred. REF mesh removed.")
+    pi_errors.show_weights_transferred()
 
 def sub_succ(self, context):
-    self.layout.label(text="REF subdivided.")
+    pi_errors.show_success('mesh_subdivided')
 
 def wesmo(self, context):
-    self.layout.label(text="Weights smoothed.")
+    pi_errors.show_success('weights_smoothed')
 
 def wesmonog(self, context):
-    self.layout.label(text="No weight groups.")
+    pi_errors.show_error('no_weight_groups')
 
 def limwesucc(self, context):
-    self.layout.label(text="Number of weights per vertex limited.")
+    pi_errors.show_success('weights_limited')
 
 def rbmbdsucc(self, context):
-    self.layout.label(text="Removed doubles.")
+    pi_errors.show_success('doubles_removed')
 
 def ttqsucc(self, context):
-    self.layout.label(text="Changed faces.")
+    pi_errors.show_success('faces_converted')
 
 def linkrigsucc(self, context):
-    self.layout.label(text="Linked rig.")
+    pi_errors.show_success('rig_linked')
 
 def norig(self, context):
-    self.layout.label(text="Cannot find rig, please make sure it is in your scene.")
+    pi_errors.show_no_rig_found()
 
-# Helper function to display popup lists
+# Legacy helper function
 def display_popup_list(popups):
-    def draw_popup(self, context):
-        for popup in popups:
-            popup(self, context)
-    return draw_popup
+    return pi_errors.display_popup_list(popups)
 
 # Remove Doubles
 class rdmbd(bpy.types.Operator):
@@ -71,20 +71,17 @@ class rdmbd(bpy.types.Operator):
         
         # Check if there's an active object
         if not context.active_object:
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_object_selected()
             return {'CANCELLED'}
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_object_selected()
             return {'CANCELLED'}
         
         # Check if object is a mesh
         if context.active_object.type != 'MESH':
-            popups = [lambda self, context: self.layout.label(text="Selected object is not a mesh.")]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_error('wrong_object_type')
             return {'CANCELLED'}
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -95,31 +92,17 @@ class rdmbd(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.remove_doubles(threshold=self.threshold)
             
-            popups = [rbmbdsucc]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+            pi_errors.show_success('doubles_removed')
         else:
-            popups = [exit_edit]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_exit_edit_mode()
             return {'CANCELLED'}
 
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=300)
-    
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Merge by Distance", icon='AUTOMERGE_ON')
-        layout.separator()
-        
-        col = layout.column(align=True)
-        col.label(text="Merge Distance:")
-        col.prop(self, "threshold", text="")
-        
-        layout.separator()
-        row = layout.row()
-        row.label(text="💡 Tip: Lower values merge fewer vertices", icon='INFO')
+        # Skip dialog and use fixed threshold of 0.0001
+        self.threshold = 0.0001
+        return self.execute(context)
 
 # Tris To Quads
 class quadfa(bpy.types.Operator):
@@ -132,20 +115,17 @@ class quadfa(bpy.types.Operator):
         
         # Check if there's an active object
         if not context.active_object:
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_object_selected()
             return {'CANCELLED'}
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_object_selected()
             return {'CANCELLED'}
         
         # Check if object is a mesh
         if context.active_object.type != 'MESH':
-            popups = [lambda self, context: self.layout.label(text="Selected object is not a mesh.")]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_error('wrong_object_type')
             return {'CANCELLED'}
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -156,11 +136,9 @@ class quadfa(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.tris_convert_to_quads()
             
-            popups = [ttqsucc]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+            pi_errors.show_success('faces_converted')
         else:
-            popups = [exit_edit]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_exit_edit_mode()
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -176,20 +154,17 @@ class trifa(bpy.types.Operator):
         
         # Check if there's an active object
         if not context.active_object:
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_object_selected()
             return {'CANCELLED'}
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            popups = [select_obj]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_no_object_selected()
             return {'CANCELLED'}
         
         # Check if object is a mesh
         if context.active_object.type != 'MESH':
-            popups = [lambda self, context: self.layout.label(text="Selected object is not a mesh.")]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_error('wrong_object_type')
             return {'CANCELLED'}
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -200,11 +175,9 @@ class trifa(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
 
-            popups = [ttqsucc]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+            pi_errors.show_success('faces_converted')
         else:
-            popups = [exit_edit]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.show_exit_edit_mode()
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -227,13 +200,14 @@ class sii_subdivision(bpy.types.Operator):
 
         for obj in context.selected_objects:
             if obj.hide_get():
-                popups = [select_obj]
-                bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+                pi_errors.show_no_object_selected()
                 return {'CANCELLED'}
         obj = bpy.data.objects.get("REF")
         if obj is None:
-            popups = [ref_not_found]
-            bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='ERROR')
+            pi_errors.ErrorManager.show_error('file_not_found',
+                custom_message="REF object not found",
+                custom_details=["Load a REF object first",
+                               "Make sure REF object is visible"])
             return {'CANCELLED'}
 
         bpy.ops.object.select_all(action='DESELECT')
@@ -244,8 +218,7 @@ class sii_subdivision(bpy.types.Operator):
         modifier.levels = self.levels
         bpy.ops.object.modifier_apply(modifier=modifier.name)
         
-        popups = [sub_succ]
-        bpy.context.window_manager.popup_menu(display_popup_list(popups), title="Creator Tools", icon='INFO')
+        pi_errors.show_success('mesh_subdivided')
         return {'FINISHED'}
 
     def invoke(self, context, event):
