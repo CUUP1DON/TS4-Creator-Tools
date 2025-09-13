@@ -113,7 +113,7 @@ def update_strip_overlay(self, context):
 class MESH_OT_mark_strip(bpy.types.Operator):
     """Mark selected edges as strip boundaries"""
     bl_idname = "mesh.mark_strip"
-    bl_label = "Mark Strip Boundary"
+    bl_label = "Mark Boundary"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -129,7 +129,7 @@ class MESH_OT_mark_strip(bpy.types.Operator):
             return {'CANCELLED'}
         
         if context.edit_object.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
             
         if context.mode != 'EDIT_MESH':
@@ -180,7 +180,7 @@ class MESH_OT_mark_strip(bpy.types.Operator):
 class MESH_OT_clear_strip(bpy.types.Operator):
     """Clear strip boundaries on selected edges"""
     bl_idname = "mesh.clear_strip"
-    bl_label = "Clear Strip Boundary"
+    bl_label = "Clear Boundary"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -196,7 +196,7 @@ class MESH_OT_clear_strip(bpy.types.Operator):
             return {'CANCELLED'}
         
         if context.edit_object.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
             
         if context.mode != 'EDIT_MESH':
@@ -247,9 +247,10 @@ class MESH_OT_clear_strip(bpy.types.Operator):
 # Operator: Transparency Fix
 # ------------------------------------------------------------------------
 class MESH_OT_transparency_fix(bpy.types.Operator):
-    """Fix transparency rendering issues using strip markers or sharp edges"""
+    """Fix transparency rendering issues using marked strip boundaries. Requires mesh object in Object mode with marked boundaries"""
     bl_idname = "mesh.transparency_fix"
     bl_label = "Fix Transparency"
+    bl_description = "Fix transparency rendering issues using marked strip boundaries (Object mode required)"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -274,15 +275,14 @@ class MESH_OT_transparency_fix(bpy.types.Operator):
         bm.edges.ensure_lookup_table()
         layer = get_strip_layer(bm)
 
-        # Gather edges manually marked OR sharp
-        marked_edges = [e for e in bm.edges if e[layer] == 1 or not e.smooth]
+        # Gather edges manually marked
+        marked_edges = [e for e in bm.edges if e[layer] == 1]
 
         if not marked_edges:
             pi_errors.ErrorManager.show_error('no_marked_vertices',
                 custom_message="No strips found for transparency fix.",
                 custom_details=[
-                    "Use 'Mark Strip' button to mark edges first",
-                    "Or mark edges as Sharp in Edit Mode",
+                    "Use 'Mark Boundary' button to mark edges first",
                     "At least one edge must be marked to split the mesh"
                 ])
             bpy.ops.object.mode_set(mode='OBJECT')

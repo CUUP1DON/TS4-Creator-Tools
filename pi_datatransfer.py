@@ -137,34 +137,34 @@ def ref_not_found(self, context):
                                      custom_message="REF not found.")
 
 def no_weight_groups(self, context):
-    pi_errors.show_error('no_weight_groups')
+    pi_errors.ErrorManager.show_error('no_weight_groups')
 
 def weight_trans(self, context):
-    pi_errors.show_weights_transferred()
+    pi_errors.ErrorManager.show_success('weights_transferred')
 
 def sub_succ(self, context):
-    pi_errors.show_success('mesh_subdivided')
+    pi_errors.ErrorManager.show_success('mesh_subdivided')
 
 def wesmo(self, context):
-    pi_errors.show_success('weights_smoothed')
+    pi_errors.ErrorManager.show_success('weights_smoothed')
 
 def wesmonog(self, context):
-    pi_errors.show_error('no_weight_groups')
+    pi_errors.ErrorManager.show_error('no_weight_groups')
 
 def limwesucc(self, context):
-    pi_errors.show_success('weights_limited')
+    pi_errors.ErrorManager.show_success('weights_limited')
 
 def rbmbdsucc(self, context):
-    pi_errors.show_success('doubles_removed')
+    pi_errors.ErrorManager.show_success('doubles_removed')
 
 def ttqsucc(self, context):
-    pi_errors.show_success('faces_converted')
+    pi_errors.ErrorManager.show_success('faces_converted')
 
 def linkrigsucc(self, context):
-    pi_errors.show_success('rig_linked')
+    pi_errors.ErrorManager.show_success('rig_linked')
 
 def norig(self, context):
-    pi_errors.show_no_rig_found()
+    pi_errors.ErrorManager.show_error('no_rig_found')
 
 def topology_error(self, context):
     pi_errors.ErrorManager.show_error('topology_mismatch')

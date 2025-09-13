@@ -18,7 +18,7 @@ class si_uvchecker(bpy.types.Operator):
             
         # Validate object type
         if obj.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
         
         # Now it's safe to change modes

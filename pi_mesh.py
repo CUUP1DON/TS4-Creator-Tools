@@ -3,10 +3,10 @@ from . import pi_errors
 
 # Legacy popup functions (kept for compatibility)
 def select_obj(self, context):
-    pi_errors.show_no_object_selected()
+    pi_errors.ErrorManager.show_error('no_object_selected')
 
 def exit_edit(self, context):
-    pi_errors.show_exit_edit_mode()
+    pi_errors.ErrorManager.show_error('exit_edit_mode')
 
 def sfs_not_found(self, context):
     pi_errors.ErrorManager.show_error('file_not_found',
@@ -17,34 +17,34 @@ def ref_not_found(self, context):
                                      custom_message="REF not found.")
 
 def no_weight_groups(self, context):
-    pi_errors.show_error('no_weight_groups')
+    pi_errors.ErrorManager.show_error('no_weight_groups')
 
 def weight_trans(self, context):
-    pi_errors.show_weights_transferred()
+    pi_errors.ErrorManager.show_success('weights_transferred')
 
 def sub_succ(self, context):
-    pi_errors.show_success('mesh_subdivided')
+    pi_errors.ErrorManager.show_success('mesh_subdivided')
 
 def wesmo(self, context):
-    pi_errors.show_success('weights_smoothed')
+    pi_errors.ErrorManager.show_success('weights_smoothed')
 
 def wesmonog(self, context):
-    pi_errors.show_error('no_weight_groups')
+    pi_errors.ErrorManager.show_error('no_weight_groups')
 
 def limwesucc(self, context):
-    pi_errors.show_success('weights_limited')
+    pi_errors.ErrorManager.show_success('weights_limited')
 
 def rbmbdsucc(self, context):
-    pi_errors.show_success('doubles_removed')
+    pi_errors.ErrorManager.show_success('doubles_removed')
 
 def ttqsucc(self, context):
-    pi_errors.show_success('faces_converted')
+    pi_errors.ErrorManager.show_success('faces_converted')
 
 def linkrigsucc(self, context):
-    pi_errors.show_success('rig_linked')
+    pi_errors.ErrorManager.show_success('rig_linked')
 
 def norig(self, context):
-    pi_errors.show_no_rig_found()
+    pi_errors.ErrorManager.show_error('no_rig_found')
 
 # Legacy helper function
 def display_popup_list(popups):
@@ -71,17 +71,17 @@ class rdmbd(bpy.types.Operator):
         
         # Check if there's an active object
         if not context.active_object:
-            pi_errors.show_no_object_selected()
+            pi_errors.ErrorManager.show_error('no_object_selected')
             return {'CANCELLED'}
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            pi_errors.show_no_object_selected()
+            pi_errors.ErrorManager.show_error('no_object_selected')
             return {'CANCELLED'}
         
         # Check if object is a mesh
         if context.active_object.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -92,9 +92,9 @@ class rdmbd(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.remove_doubles(threshold=self.threshold)
             
-            pi_errors.show_success('doubles_removed')
+            pi_errors.ErrorManager.show_success('doubles_removed')
         else:
-            pi_errors.show_exit_edit_mode()
+            pi_errors.ErrorManager.show_error('exit_edit_mode')
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -115,17 +115,17 @@ class quadfa(bpy.types.Operator):
         
         # Check if there's an active object
         if not context.active_object:
-            pi_errors.show_no_object_selected()
+            pi_errors.ErrorManager.show_error('no_object_selected')
             return {'CANCELLED'}
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            pi_errors.show_no_object_selected()
+            pi_errors.ErrorManager.show_error('no_object_selected')
             return {'CANCELLED'}
         
         # Check if object is a mesh
         if context.active_object.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -136,9 +136,9 @@ class quadfa(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.tris_convert_to_quads()
             
-            pi_errors.show_success('faces_converted')
+            pi_errors.ErrorManager.show_success('faces_converted')
         else:
-            pi_errors.show_exit_edit_mode()
+            pi_errors.ErrorManager.show_error('exit_edit_mode')
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -154,17 +154,17 @@ class trifa(bpy.types.Operator):
         
         # Check if there's an active object
         if not context.active_object:
-            pi_errors.show_no_object_selected()
+            pi_errors.ErrorManager.show_error('no_object_selected')
             return {'CANCELLED'}
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            pi_errors.show_no_object_selected()
+            pi_errors.ErrorManager.show_error('no_object_selected')
             return {'CANCELLED'}
         
         # Check if object is a mesh
         if context.active_object.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
         
         bpy.ops.object.mode_set(mode='EDIT')
@@ -175,9 +175,9 @@ class trifa(bpy.types.Operator):
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
 
-            pi_errors.show_success('faces_converted')
+            pi_errors.ErrorManager.show_success('faces_converted')
         else:
-            pi_errors.show_exit_edit_mode()
+            pi_errors.ErrorManager.show_error('exit_edit_mode')
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -200,7 +200,7 @@ class sii_subdivision(bpy.types.Operator):
 
         for obj in context.selected_objects:
             if obj.hide_get():
-                pi_errors.show_no_object_selected()
+                pi_errors.ErrorManager.show_error('no_object_selected')
                 return {'CANCELLED'}
         obj = bpy.data.objects.get("REF")
         if obj is None:
@@ -218,7 +218,7 @@ class sii_subdivision(bpy.types.Operator):
         modifier.levels = self.levels
         bpy.ops.object.modifier_apply(modifier=modifier.name)
         
-        pi_errors.show_success('mesh_subdivided')
+        pi_errors.ErrorManager.show_success('mesh_subdivided')
         return {'FINISHED'}
 
     def invoke(self, context, event):

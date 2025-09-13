@@ -28,7 +28,7 @@ atexit.register(cleanup_temp_files)
 class TSCT_OT_OpenShadowBake(Operator):
     """Open a copy of the shadow map baking setup file"""
     bl_idname = "tsct.open_shadow_bake"
-    bl_label = "Open Shadow Bake"
+    bl_label = "Shadow Map"
     bl_description = "Open a copy of the shadow map baking setup file"
     bl_options = {'REGISTER', 'UNDO'}
 

@@ -248,17 +248,17 @@ class CUUPID_PT_creator_tools(bpy.types.Panel):
         
         # Transparency Fix
         transparency_menu = layout.box().column()
-        transparency_menu.label(text="Transparency Fix", icon='MATERIAL')
-        transparency_menu.operator("mesh.mark_strip", text="Mark Strip Boundary")
-        transparency_menu.operator("mesh.clear_strip", text="Clear Strip Boundary")
+        transparency_menu.label(text="Transparency", icon='MATERIAL')
+        transparency_menu.operator("mesh.mark_strip", text="Mark Boundary")
+        transparency_menu.operator("mesh.clear_strip", text="Clear Boundary")
         transparency_menu.operator("mesh.transparency_fix", text="Fix Transparency")
 
         # LOD Creation
         lod_menu = layout.box().column()
-        lod_menu.label(text="LOD Creation", icon='SNAP_VERTEX')
+        lod_menu.label(text="LODs", icon='SNAP_VERTEX')
         lod_menu.operator("mesh.generate_lod_levels", text="Generate LOD Levels")
-        lod_menu.operator("mesh.mark_lod_vertices", text="Mark LOD Vertices")
-        lod_menu.operator("mesh.clear_lod_vertices", text="Clear LOD Vertices")
+        lod_menu.operator("mesh.mark_lod_vertices", text="Mark LOD Connection Boundary")
+        lod_menu.operator("mesh.clear_lod_vertices", text="Clear LOD Connection Boundary")
         lod_menu.operator("mesh.connect_lod_vertices", text="Connect LOD Vertices")
         
         # Dynamic wireframe toggle button
@@ -277,11 +277,11 @@ class CUUPID_PT_creator_tools(bpy.types.Panel):
         vertex_paints_menu.operator("object.vtc_black", text="Black/NONE")
         vertex_paints_menu.operator("object.vtc_white", text="White/Lamp Glow")
 
-        # Bakes
+        # Bake
         bakes_menu = layout.box().column()
-        bakes_menu.label(text="Bakes", icon='SHADING_RENDERED')
+        bakes_menu.label(text="Bake", icon='SHADING_RENDERED')
         bakes_menu.operator("tsct.create_shadow_bake_collection", text="Create Bake Collection")
-        bakes_menu.operator("tsct.open_shadow_bake", text="Open Shadow Bake")
+        bakes_menu.operator("tsct.open_shadow_bake", text="Shadow Map")
 
 # Custom Asset Importer Panel (separate tab)
 class TS4CT_PT_custom_importer(bpy.types.Panel):
@@ -436,34 +436,34 @@ def ref_not_found(self, context):
                                                    "Make sure REF object is visible"])
 
 def no_weight_groups(self, context):
-    pi_errors.show_error('no_weight_groups')
+    pi_errors.ErrorManager.show_error('no_weight_groups')
 
 def weight_trans(self, context):
-    pi_errors.show_weights_transferred()
+    pi_errors.ErrorManager.show_success('weights_transferred')
 
 def sub_succ(self, context):
-    pi_errors.show_success('mesh_subdivided')
+    pi_errors.ErrorManager.show_success('mesh_subdivided')
 
 def wesmo(self, context):
-    pi_errors.show_success('weights_smoothed')
+    pi_errors.ErrorManager.show_success('weights_smoothed')
 
 def wesmonog(self, context):
-    pi_errors.show_error('no_weight_groups')
+    pi_errors.ErrorManager.show_error('no_weight_groups')
 
 def limwesucc(self, context):
-    pi_errors.show_success('weights_limited')
+    pi_errors.ErrorManager.show_success('weights_limited')
 
 def rbmbdsucc(self, context):
-    pi_errors.show_success('doubles_removed')
+    pi_errors.ErrorManager.show_success('doubles_removed')
 
 def ttqsucc(self, context):
-    pi_errors.show_success('faces_converted')
+    pi_errors.ErrorManager.show_success('faces_converted')
 
 def linkrigsucc(self, context):
-    pi_errors.show_success('rig_linked')
+    pi_errors.ErrorManager.show_success('rig_linked')
 
 def norig(self, context):
-    pi_errors.show_no_rig_found()
+    pi_errors.ErrorManager.show_error('no_rig_found')
 
 def display_popup_list(popups):
     """Legacy support function - maintained for compatibility"""

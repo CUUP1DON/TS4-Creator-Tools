@@ -26,7 +26,7 @@ class siiii_weights(bpy.types.Operator):
             
         obj = bpy.data.objects.get("REF")
         if obj and not obj.vertex_groups:
-            pi_errors.show_error('no_weight_groups')
+            pi_errors.ErrorManager.show_error('no_weight_groups')
             return {'CANCELLED'}
             
         self.siiii_weights()
@@ -119,7 +119,7 @@ class smoothwe(bpy.types.Operator):
             
         obj = context.active_object
         if obj.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
             
         # Check if object has vertex groups
@@ -157,7 +157,7 @@ class smoothwe(bpy.types.Operator):
                     if obj.data.use_mirror_z:
                         obj.data.use_mirror_z = False
                     bpy.ops.object.vertex_group_smooth(group_select_mode='ALL', factor=0.5, repeat=3)
-                    pi_errors.show_success('weights_smoothed')
+                    pi_errors.ErrorManager.show_success('weights_smoothed')
                 except Exception as e:
                     pi_errors.ErrorManager.show_error('operation_failed',
                         custom_message="Failed to smooth weights",
@@ -210,7 +210,7 @@ class limwe(bpy.types.Operator):
             
         obj = context.active_object
         if obj.type != 'MESH':
-            pi_errors.show_error('wrong_object_type')
+            pi_errors.ErrorManager.show_error('wrong_object_type')
             return {'CANCELLED'}
             
         # Check if object has vertex groups

@@ -118,7 +118,7 @@ def update_vertex_overlay(self, context):
 class MESH_OT_mark_lod_vertices(bpy.types.Operator):
     """Mark selected vertices for LOD connection"""
     bl_idname = "mesh.mark_lod_vertices"
-    bl_label = "Mark LOD Vertices"
+    bl_label = "Mark LOD Connection Boundary"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -135,7 +135,7 @@ class MESH_OT_mark_lod_vertices(bpy.types.Operator):
                 return {'CANCELLED'}
             
             if context.edit_object.type != 'MESH':
-                pi_errors.show_error('wrong_object_type')
+                pi_errors.ErrorManager.show_error('wrong_object_type')
                 return {'CANCELLED'}
             
             if context.mode != 'EDIT_MESH':
@@ -188,7 +188,7 @@ class MESH_OT_mark_lod_vertices(bpy.types.Operator):
 class MESH_OT_clear_lod_vertices(bpy.types.Operator):
     """Clear LOD connection markers on selected vertices"""
     bl_idname = "mesh.clear_lod_vertices"
-    bl_label = "Clear LOD Vertices"
+    bl_label = "Clear LOD Connection Boundary"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -205,7 +205,7 @@ class MESH_OT_clear_lod_vertices(bpy.types.Operator):
                 return {'CANCELLED'}
             
             if context.edit_object.type != 'MESH':
-                pi_errors.show_error('wrong_object_type')
+                pi_errors.ErrorManager.show_error('wrong_object_type')
                 return {'CANCELLED'}
             
             if context.mode != 'EDIT_MESH':
