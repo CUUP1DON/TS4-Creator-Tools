@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > This addon was made using the help of claude.ai.
 
-## TS4 Creator Tools v1.9 (11.11.2025)
+## TS4 Creator Tools v2.0 (12.28.2025)
 
 _Asset Importer:_
 - Load Base Body: A directory of default bodies you can load. Includes: head, top, bottom, full body, and feet.
@@ -61,9 +61,16 @@ _Vertex Paints:_
 - Black: Disables slider use on meshes it's applied to.
 - White: For lamp glows.
 
-_Bake:_ 
+_Shadow Map:_ 
 - Create Bake Collection: Does what it says. Makes a collection to put the items you want to use to bake your shadow maps into a collection for import into blend files used for texture map bakes.
 - Shadow Map: Creates and opens a copy of a blend file you can use to bake shadow maps for your mesh.
+
+_Baking:_ 
+- Create Bake Duplicate: Will make a duplicate of your mesh for baking. Good for making sure your original mesh's UVs remain untouched.
+- Setup Materials: Creates a new material with the nodes you need to bake new maps.
+- Setup UV Maps: Will set up the UV maps of your object for baking. Will remove all maps that aren't the very first one.
+- Start Baking: Starts the baking process. Will run through any meshes and images you have added in the queue automatically.
+- Output Folder: Where the addon will save any new textures it bakes.
 
 ## TS4CT: Custom Importer
 
