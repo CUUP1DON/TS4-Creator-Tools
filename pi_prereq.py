@@ -1,52 +1,89 @@
 import bpy
+import re
 from . import pi_errors
 
 def reref(context):
-    """Rename selected object to 'REF'"""
+    """Rename selected objects to 'REF_1', 'REF_2', etc."""
     # Get selected objects
     selected_objects = context.selected_objects
-    # Check if exactly one object is selected
-    if len(selected_objects) != 1:
+    # Check if any objects are selected
+    if not selected_objects:
         pi_errors.ErrorManager.show_error('no_object_selected',
-            custom_message="Please select exactly one object",
+            custom_message="Please select at least one object",
             custom_details=[
-                "Select the mesh you want to rename to 'REF'",
-                "Only one object can be renamed at a time"
+                "Select the mesh(es) you want to rename to 'REF_1', 'REF_2', etc.",
+                "Multiple objects can be renamed at once"
             ])
-    else:
-        # Get the selected object
-        selected_object = selected_objects[0]
-        # Rename the object
-        selected_object.name = "REF"
-        pi_errors.ErrorManager.show_success('operation_complete',
-            custom_message=f"Object renamed to 'REF'",
-            custom_details=["The selected object is now named 'REF'"])
+        return
+
+    # Get existing names
+    existing_names = set(obj.name for obj in bpy.data.objects)
+
+    # Rename the objects
+    renamed_names = []
+    for i, selected_object in enumerate(selected_objects):
+        new_name = f"REF_{i + 1}"
+        while new_name in existing_names:
+            match = re.search(r'(\d+)$', new_name)
+            if match:
+                num = int(match.group(1)) + 1
+                new_name = re.sub(r'\d+$', str(num), new_name)
+            else:
+                new_name += "_1"
+        selected_object.name = new_name
+        existing_names.add(new_name)
+        renamed_names.append(new_name)
+
+    # Success message
+    message = f"{len(selected_objects)} object{'s' if len(selected_objects) > 1 else ''} renamed"
+    details = [f"Renamed to: {', '.join(renamed_names)}"]
+    pi_errors.ErrorManager.show_success('operation_complete',
+        custom_message=message,
+        custom_details=details)
 
 def resfs(context):
-    """Rename selected object to 's4studio_mesh_1'"""
+    """Rename selected objects to 's4studio_mesh_1', 's4studio_mesh_2', etc."""
     # Get selected objects
     selected_objects = context.selected_objects
-    # Check if exactly one object is selected
-    if len(selected_objects) != 1:
+    # Check if any objects are selected
+    if not selected_objects:
         pi_errors.ErrorManager.show_error('no_object_selected',
-            custom_message="Please select exactly one object",
+            custom_message="Please select at least one object",
             custom_details=[
-                "Select the mesh you want to rename to 's4studio_mesh_1'",
-                "Only one object can be renamed at a time"
+                "Select the mesh(es) you want to rename to 's4studio_mesh_1', 's4studio_mesh_2', etc.",
+                "Multiple objects can be renamed at once"
             ])
-    else:
-        # Get the selected object
-        selected_object = selected_objects[0]
-        # Rename the object
-        selected_object.name = "s4studio_mesh_1"
-        pi_errors.ErrorManager.show_success('operation_complete',
-            custom_message=f"Object renamed to 's4studio_mesh_1'",
-            custom_details=["The selected object is now named 's4studio_mesh_1'"])
+        return
+
+    # Get existing names
+    existing_names = set(obj.name for obj in bpy.data.objects)
+
+    # Rename the objects
+    renamed_names = []
+    for i, selected_object in enumerate(selected_objects):
+        new_name = f"s4studio_mesh_{i + 1}"
+        while new_name in existing_names:
+            match = re.search(r'(\d+)$', new_name)
+            if match:
+                num = int(match.group(1)) + 1
+                new_name = re.sub(r'\d+$', str(num), new_name)
+            else:
+                new_name += "_1"
+        selected_object.name = new_name
+        existing_names.add(new_name)
+        renamed_names.append(new_name)
+
+    # Success message
+    message = f"{len(selected_objects)} object{'s' if len(selected_objects) > 1 else ''} renamed"
+    details = [f"Renamed to: {', '.join(renamed_names)}"]
+    pi_errors.ErrorManager.show_success('operation_complete',
+        custom_message=message,
+        custom_details=details)
 
 class Reref(bpy.types.Operator):
     bl_idname = "object.reref"
     bl_label = "Rename Ref"
-    bl_description = "Quickly renames your mesh to REF"
+    bl_description = "Quickly renames selected meshes to REF_1, REF_2, etc."
    
     def execute(self, context):
         bpy.ops.ed.undo_push(message="Creator Tools: Rename REF")
@@ -56,7 +93,7 @@ class Reref(bpy.types.Operator):
 class Resfs(bpy.types.Operator):
     bl_idname = "object.resfs"
     bl_label = "Rename SFS"
-    bl_description = "Quickly renames your mesh to s4studio_mesh_1"
+    bl_description = "Quickly renames selected meshes to s4studio_mesh_1, s4studio_mesh_2, etc."
    
     def execute(self, context):
         bpy.ops.ed.undo_push(message="Creator Tools: Rename S4S")

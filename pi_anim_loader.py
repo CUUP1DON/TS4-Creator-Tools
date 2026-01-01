@@ -2,6 +2,7 @@
 import bpy
 import os
 from bpy.types import Operator
+from .ci_asset_management import show_popup
 
 class TSCT_OT_load_anim(Operator):
     bl_idname = "object.load_anim"
@@ -39,6 +40,8 @@ class TSCT_OT_load_anim(Operator):
             ('walk', 'Walk', 'Walking animation'),
             ('chair', 'Chair', 'Chair sit/stand animation'),
             ('rangeofmotion', 'Range of Motion', 'Range of motion animation'),
+            ('fairy_fly', 'Fairy Fly', 'Fairy flying animation for wings'),
+            ('mermaid_swim', 'Mermaid Swim', 'Mermaid swimming animation'),
         ],
         default='walk',
         update=update_animation
@@ -69,7 +72,9 @@ class TSCT_OT_load_anim(Operator):
         animation_names = {
             'walk': 'Walk',
             'chair': 'Chair',
-            'rangeofmotion': 'Range of Motion'
+            'rangeofmotion': 'Range of Motion',
+            'fairy_fly': 'Fairy Fly',
+            'mermaid_swim': 'Mermaid Swim'
         }
         return animation_names.get(animation_code, animation_code)
     
@@ -102,7 +107,7 @@ class TSCT_OT_load_anim(Operator):
                         break
         
         if not armature_obj:
-            self.display_popup_error("No armature found in scene")
+            show_popup("No armature found in scene")
             return {'CANCELLED'}
         
         # Store original state before applying test animation
@@ -124,41 +129,77 @@ class TSCT_OT_load_anim(Operator):
             if os.path.exists(fallback_path):
                 blend_path = fallback_path
             else:
-                self.display_popup_error(f"Animation file not found: {blend_file}")
+                show_popup(f"Animation file not found: {blend_file}")
                 return {'CANCELLED'}
         
         print(f"Loading animation {blend_file}: {blend_path}")
         
         # Load the animation
         try:
-            with bpy.data.libraries.load(blend_path) as (data_from, data_to):
+            with bpy.data.libraries.load(blend_path, link=False) as (data_from, data_to):
                 print(f"Available actions in {blend_file}: {list(data_from.actions)}")
-                
+
                 # Look for the expected action name
                 expected_action_name = self.get_expected_action_name()
                 target_actions = [name for name in data_from.actions if expected_action_name in name.lower()]
-                
+
                 # If no exact match, try loading the first action
                 if not target_actions and data_from.actions:
                     print(f"No action found with name containing '{expected_action_name}', using first available")
                     target_actions = [data_from.actions[0]]
-                
+
                 if not target_actions:
-                    self.display_popup_error("No actions found in animation file")
+                    show_popup("No actions found in animation file")
                     return {'CANCELLED'}
-                
+
                 data_to.actions = target_actions
             
             # Apply the loaded action to the armature
             if data_to.actions:
                 test_action = data_to.actions[0]
-                
-                # Create animation data if it doesn't exist
+
+                # Ensure armature is active in the view layer (Blender 4.x requirement)
+                original_active = context.active_object
+                context.view_layer.objects.active = armature_obj
+
+                # Ensure animation data exists
                 if not armature_obj.animation_data:
                     armature_obj.animation_data_create()
-                
-                # Apply test action
-                armature_obj.animation_data.action = test_action
+
+                # Handle Action Slots for Blender 4.x compatibility
+                anim_data = armature_obj.animation_data
+                anim_data.action = test_action
+
+                # Try action slot assignment (Blender 4.x+)
+                try:
+                    # Use action_suitable_slots to get an appropriate slot (per Blender docs)
+                    if hasattr(anim_data, 'action_suitable_slots') and anim_data.action_suitable_slots:
+                        anim_data.action_slot = anim_data.action_suitable_slots[0]
+                    # Fallback: manually get the first slot (for Legacy Slots)
+                    elif hasattr(test_action, 'slots') and test_action.slots:
+                        anim_data.action_slot = test_action.slots[0]
+                except Exception:
+                    # If action slot assignment fails, fall back to legacy method
+                    pass
+
+                # Force update to ensure the action is properly applied
+                bpy.context.view_layer.update()
+
+                # Verify the action was applied
+                if hasattr(armature_obj.animation_data, 'action_slots'):
+                    if armature_obj.animation_data.action_slot and armature_obj.animation_data.action_slot.action == test_action:
+                        print(f"✓ Action successfully applied to action slot on {armature_obj.name}")
+                    else:
+                        print(f"✗ Failed to apply action to action slot on {armature_obj.name}")
+                else:
+                    if armature_obj.animation_data.action == test_action:
+                        print(f"✓ Action successfully applied to {armature_obj.name}")
+                    else:
+                        print(f"✗ Failed to apply action to {armature_obj.name}")
+
+                # Restore original active object if needed
+                if original_active and original_active != armature_obj:
+                    context.view_layer.objects.active = original_active
                 
                 # Adjust timeline to match animation length
                 if test_action.frame_range:
@@ -186,15 +227,15 @@ class TSCT_OT_load_anim(Operator):
                 
                 body_type_name = self.get_body_type_name(self.body_type)
                 animation_name = self.get_animation_name(self.animation)
-                self.display_popup_success(f"{animation_name} loaded on '{armature_obj.name}'.")
+                show_popup(f"{animation_name} loaded on '{armature_obj.name}'.")
                 
                 return {'FINISHED'}
             else:
-                self.display_popup_error("Failed to load animation action")
+                show_popup("Failed to load animation action")
                 return {'CANCELLED'}
                 
         except Exception as e:
-            self.display_popup_error(f"Error loading animation: {str(e)}")
+            show_popup(f"Error loading animation: {str(e)}")
             return {'CANCELLED'}
     
     def store_original_state(self, context, armature_obj):
@@ -211,12 +252,18 @@ class TSCT_OT_load_anim(Operator):
     
     def get_blend_filename(self):
         """Generate the blend file name based on body type and animation"""
-        # Special case: chair animations for adults use generic "a_chair_anim"
+        # Special case: chair animations for adults use generic "a_chair"
         if self.animation == 'chair' and self.body_type in ['AM', 'AF']:
-            return "a_chair_anim.blend"
+            return "a_chair.blend"
         # Special case: range of motion for adults uses child blend file
         elif self.animation == 'rangeofmotion' and self.body_type in ['AM', 'AF']:
             return "c_rangeofmotion.blend"
+        # Special case: fairy fly animation uses generic "fairy_fly" for all body types
+        elif self.animation == 'fairy_fly':
+            return "fairy_fly.blend"
+        # Special case: mermaid swim animation uses generic "mermaid_swim" for all body types
+        elif self.animation == 'mermaid_swim':
+            return "mermaid_swim.blend"
         return f"{self.body_type.lower()}_{self.animation}.blend"
     
     def get_expected_action_name(self):
@@ -227,6 +274,12 @@ class TSCT_OT_load_anim(Operator):
         # Special case: range of motion for adults uses child action name
         elif self.animation == 'rangeofmotion' and self.body_type in ['AM', 'AF']:
             return "c_rangeofmotion"
+        # Special case: fairy fly animation uses generic "fairy_fly" for all body types
+        elif self.animation == 'fairy_fly':
+            return "fairy_fly"
+        # Special case: mermaid swim animation uses generic "mermaid_swim" for all body types
+        elif self.animation == 'mermaid_swim':
+            return "mermaid_swim"
         return f"{self.body_type.lower()}_{self.animation}".lower()
     
     @property
@@ -239,15 +292,6 @@ class TSCT_OT_load_anim(Operator):
             ('I', 'Infant'),
         ]
     
-    def display_popup_error(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='ERROR')
-    
-    def display_popup_success(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='INFO')
 
 
 class TSCT_OT_restore_anim(Operator):
@@ -285,12 +329,12 @@ class TSCT_OT_restore_anim(Operator):
                         break
         
         if not armature_obj:
-            self.display_popup_error("No armature found in scene")
+            show_popup("No armature found in scene")
             return {'CANCELLED'}
         
         # Check if we're in testing mode
         if not context.scene.get('tsct_testing_weights', False):
-            self.display_popup_error("No animations to be cleared.")
+            show_popup("No animations to be cleared.")
             return {'CANCELLED'}
         
         try:
@@ -301,12 +345,14 @@ class TSCT_OT_restore_anim(Operator):
             # Set armature as active and switch to pose mode
             context.view_layer.objects.active = armature_obj
             bpy.ops.object.mode_set(mode='POSE')
-            
-            # Select all bones
-            bpy.ops.pose.select_all(action='SELECT')
-            
-            # Clear all pose transforms using Blender's built-in command
-            bpy.ops.pose.transforms_clear()
+
+            # Clear transforms for ALL bones (including hidden ones)
+            # Direct bone manipulation bypasses visibility restrictions
+            for bone in armature_obj.pose.bones:
+                bone.location = (0.0, 0.0, 0.0)
+                bone.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+                bone.rotation_euler = (0.0, 0.0, 0.0)
+                bone.scale = (1.0, 1.0, 1.0)
             
             # Remove the action completely
             if armature_obj.animation_data:
@@ -348,22 +394,13 @@ class TSCT_OT_restore_anim(Operator):
             if 'tsct_test_action' in context.scene:
                 del context.scene['tsct_test_action']
             
-            self.display_popup_success(f"Animation removed from '{armature_obj.name}' and all pose transforms cleared")
+            show_popup(f"Animation removed from '{armature_obj.name}' and all pose transforms cleared")
             return {'FINISHED'}
             
         except Exception as e:
-            self.display_popup_error(f"Error restoring animation: {str(e)}")
+            show_popup(f"Error restoring animation: {str(e)}")
             return {'CANCELLED'}
     
-    def display_popup_error(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='ERROR')
-    
-    def display_popup_success(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='INFO')
 
 
 # Register and unregister functions

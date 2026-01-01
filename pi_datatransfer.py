@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import EnumProperty
 from . import pi_errors
+from .ci_asset_management import show_popup
 
 class siii_datatrans(bpy.types.Operator):
     bl_idname = "object.siii_datatrans"
@@ -112,7 +113,6 @@ class siii_datatrans(bpy.types.Operator):
             custom_message="UV data transfer completed!",
             custom_details=[
                 "uv_1 data has been transferred from REF to your mesh",
-                "Your mesh is now ready for texturing"
             ])
 
 def register():
@@ -168,10 +168,6 @@ def norig(self, context):
 
 def topology_error(self, context):
     pi_errors.ErrorManager.show_error('topology_mismatch')
-
-def display_popup_list(popups):
-    """Legacy support function maintained for compatibility"""
-    return pi_errors.display_popup_list(popups)
 
 if __name__ == "__main__":
     register()

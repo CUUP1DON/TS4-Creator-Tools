@@ -6,6 +6,10 @@ import gpu
 from gpu_extras.batch import batch_for_shader
 from . import pi_errors
 
+# Check Blender version for GPU API compatibility
+BLENDER_VERSION = bpy.app.version
+USE_NEW_GPU_API = BLENDER_VERSION >= (4, 0, 0)
+
 
 # ------------------------------------------------------------------------
 # Vertex Layer Utility
@@ -48,16 +52,21 @@ def draw_marked_vertices():
             gpu.state.depth_test_set('LESS_EQUAL')
             gpu.state.blend_set('ALPHA')
             gpu.state.point_size_set(8.0)
-            
+
             # Use cached shader or create new one
             if not _vertex_shader_cache:
-                _vertex_shader_cache = gpu.shader.from_builtin("3D_UNIFORM_COLOR")
-            
+                if USE_NEW_GPU_API:
+                    # Blender 4.0+ GPU API - use UNIFORM_COLOR instead of 3D_UNIFORM_COLOR
+                    _vertex_shader_cache = gpu.shader.from_builtin("UNIFORM_COLOR")
+                else:
+                    # Legacy Blender 3.x GPU API
+                    _vertex_shader_cache = gpu.shader.from_builtin("3D_UNIFORM_COLOR")
+
             batch = batch_for_shader(_vertex_shader_cache, 'POINTS', {"pos": coords})
             _vertex_shader_cache.bind()
             _vertex_shader_cache.uniform_float("color", (1.0, 0.0, 1.0, 1.0))  # purple
             batch.draw(_vertex_shader_cache)
-            
+
             # Reset GPU state
             gpu.state.depth_test_set('NONE')
             gpu.state.blend_set('NONE')
@@ -541,8 +550,7 @@ class MESH_OT_connect_lod_vertices(Operator):
                 pi_errors.ErrorManager.show_error('file_not_found',
                     custom_message="No S4Studio mesh found!",
                     custom_details=[
-                        "Solution: Select or make active an object",
-                        "whose name starts with 's4studio_'"
+                        "Select or make active an object whose name starts with 's4studio_'"
                     ])
                 return {'CANCELLED'}
             
@@ -570,9 +578,8 @@ class MESH_OT_connect_lod_vertices(Operator):
                     custom_message="No body objects found in scene!",
                     custom_details=[
                         "Looking for objects named:",
-                        "• bottom, feet, head, top",
-                        "• bottom_2, bottom_2_3",
-                        "",
+                        "  - bottom, feet, head, top",
+                        "  - bottom_2, bottom_2_3",
                         "Make sure these objects are visible in the viewport"
                     ])
                 return {'CANCELLED'}

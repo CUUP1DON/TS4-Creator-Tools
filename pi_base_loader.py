@@ -1,6 +1,7 @@
 import bpy
 import os
 from bpy.types import Operator
+from .ci_asset_management import show_popup
 
 class TSCT_OT_load_body_base(Operator):
     bl_idname = "object.load_body_base"
@@ -89,10 +90,10 @@ class TSCT_OT_load_body_base(Operator):
                     blend_path = fallback_path
                     search_location = "assets folder (fallback)"
                 else:
-                    self.display_popup_error(f"Body base file not found: {blend_file}\nSearched in: {search_location} and assets folder")
+                    show_popup(f"Body base file not found: {blend_file}\nSearched in: {search_location} and assets folder", icon='ERROR')
                     return {'CANCELLED'}
             else:
-                self.display_popup_error(f"Body base file not found: {blend_file}\nSearched in: {search_location}")
+                show_popup(f"Body base file not found: {blend_file}\nSearched in: {search_location}", icon='ERROR')
                 return {'CANCELLED'}
         
         print(f"Loading {blend_file} from {search_location}: {blend_path}")
@@ -127,9 +128,9 @@ class TSCT_OT_load_body_base(Operator):
                 context.view_layer.objects.active = loaded_objects[0]
                 body_type_name = dict(self.body_type_items)[self.body_type]
                 mesh_type_name = dict(self.mesh_type_items)[self.mesh_type]
-                self.display_popup_success(f"{body_type_name} {mesh_type_name} body base loaded successfully. Loaded {len(loaded_objects)} objects.")
+                show_popup(f"{body_type_name} {mesh_type_name} body base loaded successfully. Loaded {len(loaded_objects)} objects.")
             else:
-                self.display_popup_error("No objects were loaded from the file.")
+                show_popup("No objects were loaded from the file.", icon='ERROR')
                 return {'CANCELLED'}
             
             return {'FINISHED'}
@@ -158,15 +159,6 @@ class TSCT_OT_load_body_base(Operator):
             ('Feet', 'Feet'),
         ]
     
-    def display_popup_error(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='ERROR')
-    
-    def display_popup_success(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='INFO')
 
 # Register and unregister functions
 def register():

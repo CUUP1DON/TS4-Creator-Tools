@@ -5,14 +5,14 @@ from . import pi_errors
 def link_mesh_to_rig(obj, target_rig, context):
     # Set object as active before any operations
     context.view_layer.objects.active = obj
-    
+
     # Check if object already has an armature modifier
     armature_modifier = None
     for modifier in obj.modifiers:
         if modifier.type == 'ARMATURE':
             armature_modifier = modifier
             break
-    
+
     # If armature modifier exists, update it with the new rig
     if armature_modifier is not None:
         if armature_modifier.object == target_rig:
@@ -22,7 +22,7 @@ def link_mesh_to_rig(obj, target_rig, context):
             # Update to new rig (overwrite existing)
             armature_modifier.object = target_rig
             return "modifier_updated"
-    
+
     # If no armature modifier exists, create one
     try:
         bpy.ops.object.modifier_add(type='ARMATURE')
@@ -79,21 +79,22 @@ class linkrig(bpy.types.Operator):
         failed_count = 0
         for obj in selected_objects:
             result = link_mesh_to_rig(obj, target_rig, context)
-            if result in ["linkrigsucc", "modifier_updated"]:
+            if result in ["linkrigsucc", "modifier_updated", "already_linked"]:
                 linked_count += 1
             else:
                 failed_count += 1
-        
-        # Display appropriate success message
-        if linked_count > 0:
+
+        # Display appropriate message
+        if failed_count > 0:
+            # Show partial failure message (which includes success count)
+            pi_errors.ErrorManager.show_error('rig_link_partial_failure', failed=failed_count, success=linked_count)
+        elif linked_count > 0:
+            # Show success message only if nothing failed
             if linked_count == 1:
                 pi_errors.ErrorManager.show_success('rig_linked_single')
             else:
                 pi_errors.ErrorManager.show_success('rig_linked_multiple', count=linked_count)
-        
-        if failed_count > 0:
-            pi_errors.ErrorManager.show_error('rig_link_partial_failure', failed=failed_count, success=linked_count)
-            
+
         return {'FINISHED'}
 
 
@@ -151,21 +152,22 @@ class TSCT_OT_select_rig(bpy.types.Operator):
         failed_count = 0
         for obj in target_meshes:
             result = link_mesh_to_rig(obj, selected_rig_obj, context)
-            if result in ["linkrigsucc", "modifier_updated"]:
+            if result in ["linkrigsucc", "modifier_updated", "already_linked"]:
                 linked_count += 1
             else:
                 failed_count += 1
-        
-        # Display appropriate success message
-        if linked_count > 0:
+
+        # Display appropriate message
+        if failed_count > 0:
+            # Show partial failure message (which includes success count)
+            pi_errors.ErrorManager.show_error('rig_link_partial_failure', failed=failed_count, success=linked_count)
+        elif linked_count > 0:
+            # Show success message only if nothing failed
             if linked_count == 1:
                 pi_errors.ErrorManager.show_success('rig_linked_single')
             else:
                 pi_errors.ErrorManager.show_success('rig_linked_multiple', count=linked_count)
-        
-        if failed_count > 0:
-            pi_errors.ErrorManager.show_error('rig_link_partial_failure', failed=failed_count, success=linked_count)
-        
+
         # Clean up the stored mesh names
         context.scene.linkrig_target_meshes = ""
         

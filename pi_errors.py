@@ -25,7 +25,6 @@ class ErrorManager:
             "title": "No Object Selected",
             "message": "Please select an object to continue.",
             "details": [
-                "Select the object you want to work with",
                 "Make sure objects are visible in the viewport",
                 "Check the Outliner if objects seem missing"
             ],
@@ -46,7 +45,7 @@ class ErrorManager:
         
         "wrong_object_type": {
             "category": SELECTION,
-            "title": "Wrong Object Type", 
+            "title": "Wrong Object Type",
             "message": "Selected object is not a mesh.",
             "details": [
                 "This tool only works with mesh objects",
@@ -54,7 +53,55 @@ class ErrorManager:
             ],
             "icon": "ERROR"
         },
-        
+
+        "selected_not_mesh": {
+            "category": SELECTION,
+            "title": "Not a Mesh Object",
+            "message": "Selected object is not a mesh.",
+            "details": [
+                "This operation only works with mesh objects",
+                "Select a mesh object from the viewport or Outliner",
+                "Ensure the selected object type is MESH"
+            ],
+            "icon": "ERROR"
+        },
+
+        "no_ash_mesh_found": {
+            "category": SELECTION,
+            "title": "No _ASH Mesh Found",
+            "message": "Could not find a mesh with '_ASH' suffix in the scene.",
+            "details": [
+                "Use 'Rename Mesh: Add _ASH' button first",
+                "Make sure you've renamed your shoe mesh with _ASH suffix",
+                "Check that the mesh is visible in the scene"
+            ],
+            "icon": "ERROR"
+        },
+
+        "ash_mesh_hidden": {
+            "category": SELECTION,
+            "title": "_ASH Mesh Hidden",
+            "message": "The _ASH mesh is hidden and cannot be processed.",
+            "details": [
+                "Unhide the mesh in the viewport or Outliner",
+                "Make sure the mesh is visible and selectable",
+                "Check visibility toggles in the Outliner"
+            ],
+            "icon": "ERROR"
+        },
+
+        "object_hidden": {
+            "category": SELECTION,
+            "title": "Object Hidden",
+            "message": "The selected object is hidden and cannot be processed.",
+            "details": [
+                "Unhide the object in the viewport or Outliner",
+                "Make sure the object is visible and selectable",
+                "Check visibility toggles in the Outliner"
+            ],
+            "icon": "ERROR"
+        },
+
         # === FILE ERRORS ===
         "file_not_found": {
             "category": FILE,
@@ -82,12 +129,84 @@ class ErrorManager:
         
         "custom_asset_not_found": {
             "category": FILE,
-            "title": "Custom Asset Not Found", 
+            "title": "Custom Asset Not Found",
             "message": "Could not find the requested custom asset.",
             "details": [
                 "Check that the file exists in your custom assets folder",
                 "Verify the file name and extension are correct",
                 "Make sure custom asset paths are set up properly"
+            ],
+            "icon": "ERROR"
+        },
+
+        "rig_file_not_found": {
+            "category": FILE,
+            "title": "Rig File Not Found",
+            "message": "Rig file not found: {file_path}",
+            "details": [
+                "Check that the rig file exists in the expected location",
+                "Verify the file name and path are correct",
+                "Make sure the addon assets are properly installed"
+            ],
+            "icon": "ERROR"
+        },
+
+        "occult_file_not_found": {
+            "category": FILE,
+            "title": "Occult File Not Found",
+            "message": "Occult item file not found: {file_path}",
+            "details": [
+                "Searched in: {search_location}",
+                "Check that the file exists in the addon assets folder",
+                "Verify the file name is correct"
+            ],
+            "icon": "ERROR"
+        },
+
+        "cas_file_not_found": {
+            "category": FILE,
+            "title": "CAS File Not Found",
+            "message": "CAS item file not found: {file_path}",
+            "details": [
+                "Searched in: {search_location}",
+                "Check that the file exists in the addon assets folder",
+                "Verify the file name is correct"
+            ],
+            "icon": "ERROR"
+        },
+
+        "body_file_not_found": {
+            "category": FILE,
+            "title": "Body File Not Found",
+            "message": "Body base file not found: {file_path}",
+            "details": [
+                "Searched in: {search_location}",
+                "Check that the file exists in the addon assets folder",
+                "Verify the file name is correct"
+            ],
+            "icon": "ERROR"
+        },
+
+        "custom_file_not_found": {
+            "category": FILE,
+            "title": "Custom File Not Found",
+            "message": "File not found: {file_path}",
+            "details": [
+                "Check that the file exists in your custom assets folder",
+                "Verify the file path and name are correct",
+                "Make sure the custom assets are set up properly"
+            ],
+            "icon": "ERROR"
+        },
+
+        "folder_open_error": {
+            "category": PROCESS,
+            "title": "Folder Open Error",
+            "message": "Could not open folder: {error}",
+            "details": [
+                "There was an error opening the assets folder",
+                "Check that the folder path is valid",
+                "Try accessing the folder manually"
             ],
             "icon": "ERROR"
         },
@@ -111,6 +230,18 @@ class ErrorManager:
             "details": [
                 "Press Tab to switch to Object Mode",
                 "This operation requires Object Mode"
+            ],
+            "icon": "ERROR"
+        },
+
+        "wrong_mode_edit_required": {
+            "category": CONTEXT,
+            "title": "Edit Mode Required",
+            "message": "Please enter Edit Mode first.",
+            "details": [
+                "Press Tab to switch to Edit Mode",
+                "This operation requires Edit Mode",
+                "Select face(s) before calculating Z coordinate"
             ],
             "icon": "ERROR"
         },
@@ -286,8 +417,7 @@ class ErrorManager:
             "title": "Weights Transferred",
             "message": "Vertex weights have been transferred successfully.",
             "details": [
-                "REF mesh has been removed as it's no longer needed",
-                "Your mesh now has proper weight painting"
+                "Weights have been transferred to your mesh.",
             ],
             "icon": "CHECKMARK"
         },
@@ -297,7 +427,7 @@ class ErrorManager:
             "title": "Mesh Subdivided",
             "message": "REF mesh has been subdivided successfully.",
             "details": [
-                "The mesh now has more geometry for detailed work"
+                "The mesh now has more geometry for detailed work."
             ],
             "icon": "CHECKMARK"
         },
@@ -308,7 +438,6 @@ class ErrorManager:
             "message": "Vertex weights have been smoothed.",
             "details": [
                 "Weight transitions should now be smoother",
-                "This helps prevent harsh deformation boundaries"
             ],
             "icon": "CHECKMARK"
         },
@@ -319,7 +448,6 @@ class ErrorManager:
             "message": "Limited the number of weights per vertex.",
             "details": [
                 "Each vertex now influences a maximum number of bones",
-                "This improves performance and prevents deformation issues"
             ],
             "icon": "CHECKMARK"  
         },
@@ -329,8 +457,7 @@ class ErrorManager:
             "title": "Duplicates Removed",
             "message": "Duplicate vertices have been merged.",
             "details": [
-                "This cleaned up overlapping geometry",
-                "Your mesh should now be cleaner"
+                "Stray vertices have been removed.",
             ],
             "icon": "CHECKMARK"
         },
@@ -340,7 +467,7 @@ class ErrorManager:
             "title": "Faces Converted",
             "message": "Face topology has been changed successfully.",
             "details": [
-                "Mesh faces have been converted as requested"
+                "Mesh faces have been converted."
             ],
             "icon": "CHECKMARK"
         },
@@ -350,8 +477,7 @@ class ErrorManager:
             "title": "Rig Linked",
             "message": "Rig has been linked to your meshes.",
             "details": [
-                "Your meshes are now connected to the armature",
-                "You can now pose and animate your character"
+                "Your meshes are now linked to the armature",
             ],
             "icon": "CHECKMARK"
         },
@@ -360,9 +486,7 @@ class ErrorManager:
             "category": SUCCESS,
             "title": "Vertex Color Applied",
             "message": "Vertex colors have been applied successfully.",
-            "details": [
-                "The vertex color affects how the mesh behaves in-game"
-            ],
+            "details": [],
             "icon": "CHECKMARK"
         },
         
@@ -383,7 +507,6 @@ class ErrorManager:
             "message": "Level of Detail meshes have been generated.",
             "details": [
                 "All LODs have been placed in the LOD Collection",
-                "These optimize performance at different distances"
             ],
             "icon": "CHECKMARK"
         },
@@ -394,7 +517,6 @@ class ErrorManager:
             "message": "Vertices have been connected successfully.",
             "details": [
                 "Marked vertices are now positioned properly",
-                "This helps create seamless connections between parts"
             ],
             "icon": "CHECKMARK"
         },
@@ -405,7 +527,6 @@ class ErrorManager:
             "message": "Baking collection has been created.",
             "details": [
                 "Add your meshes to this collection before baking",
-                "This organizes your assets for shadow map creation"
             ],
             "icon": "CHECKMARK"
         },
@@ -456,6 +577,296 @@ class ErrorManager:
             ],
             "icon": "ERROR"
         },
+
+        "mesh_renamed": {
+            "category": SUCCESS,
+            "title": "Mesh Renamed",
+            "message": "Mesh renamed to: {name}",
+            "details": [
+                "The _ASH suffix has been added to the mesh name",
+                "This mesh can now be used for auto shoe height calculation",
+                "Use 'Calculate Z' next"
+            ],
+            "icon": "CHECKMARK"
+        },
+
+        "mesh_already_has_ash": {
+            "category": SUCCESS,
+            "title": "Already Has _ASH Suffix",
+            "message": "This mesh already has the _ASH suffix.",
+            "details": [
+                "No changes were made to the mesh name",
+                "You can proceed with finding the lowest face"
+            ],
+            "icon": "CHECKMARK"
+        },
+
+        "ash_lowest_found": {
+            "category": SUCCESS,
+            "title": "Lowest Face Found",
+            "message": "Lowest Z coordinate: {z_value}",
+            "details": [
+                "The lowest face(s) have been selected in edit mode",
+                "Copy the Z value from the 'Lowest Z' field",
+                "Use this value for your shoe height in Sims 4 Studio"
+            ],
+            "icon": "CHECKMARK"
+        },
+
+        "ash_lowest_updated": {
+            "category": SUCCESS,
+            "title": "Z Coordinate Updated",
+            "message": "Updated Z coordinate: {z_value}",
+            "details": [
+                "Z value calculated from currently selected face(s)",
+                "Copy the Z value from the 'Lowest Z' field",
+                "Use this value for your shoe height in Sims 4 Studio"
+            ],
+            "icon": "CHECKMARK"
+        },
+
+        "no_faces_selected": {
+            "category": SELECTION,
+            "title": "No Faces Selected",
+            "message": "Please select at least one face in edit mode.",
+            "details": [
+                "Switch to face select mode (press 3)",
+                "Select the face(s) you want to measure",
+                "The Z coordinate will be calculated from selected faces"
+            ],
+            "icon": "ERROR"
+        },
+        
+        # === PREFERENCES ERRORS ===
+        "preferences_access_error": {
+            "category": PROCESS,
+            "title": "Preferences Access Error",
+            "message": "Could not access addon preferences.",
+            "details": [
+                "Try restarting Blender",
+                "Make sure the addon is properly installed",
+                "Check that addon preferences are accessible"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "settings_reset_complete": {
+            "category": SUCCESS,
+            "title": "Settings Reset",
+            "message": "Bake settings have been reset to defaults.",
+            "details": [
+                "Device: Auto Detect",
+                "Samples: 50",
+                "Margin: 10",
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        # === BAKING ERRORS ===
+        "no_texture_queues": {
+            "category": VALIDATION,
+            "title": "No Texture Queues",
+            "message": "No texture queues found for batch baking.",
+            "details": [
+                "Create a queue first using 'Create Queue for Selected'",
+                "Then add images to the queue",
+                "Set an output folder for each queue"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "no_valid_queues": {
+            "category": VALIDATION,
+            "title": "No Valid Queues",
+            "message": "No queues with images found.",
+            "details": [
+                "Add images to your queues first",
+                "Use 'Add Image to Queue' to add texture files",
+                "Make sure output folders are set"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "output_folder_not_set": {
+            "category": VALIDATION,
+            "title": "Output Folder Not Set",
+            "message": "Output folder not set for {mesh_name}.",
+            "details": [
+                "Set an output folder for this mesh in the queue",
+                "Click on the 'Output Folder' field and select a directory",
+                "This is where baked textures will be saved"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "no_files_added": {
+            "category": VALIDATION,
+            "title": "No Files Added",
+            "message": "No valid image files were added to the queue.",
+            "details": [
+                "Check that selected files are valid image formats",
+                "Supported formats: PNG, JPG, JPEG, TGA, TIFF",
+                "Make sure file paths are correct"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "batch_baking_cancelled": {
+            "category": PROCESS,
+            "title": "Batch Baking Cancelled",
+            "message": "Batch baking has been cancelled.",
+            "details": [
+                "Check output folders for completed bakes"
+            ],
+            "icon": "INFO"
+        },
+        
+        "batch_baking_completed": {
+            "category": SUCCESS,
+            "title": "Batch Baking Completed",
+            "message": "Batch baking completed successfully!",
+            "details": [
+                "Check output folders for baked results"
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "no_images_processed": {
+            "category": PROCESS,
+            "title": "No Images Processed",
+            "message": "No images were processed during batch baking.",
+            "details": [
+                "Check console for error messages",
+                "Verify that all texture files exist",
+                "Make sure materials are set up correctly"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "queue_exists": {
+            "category": VALIDATION,
+            "title": "Queue Already Exists",
+            "message": "Queue already exists for {mesh_name}.",
+            "details": [
+                "Use the existing queue to add images",
+                "Or remove the existing queue first",
+                "Each mesh can only have one queue"
+            ],
+            "icon": "INFO"
+        },
+        
+        "queue_created": {
+            "category": SUCCESS,
+            "title": "Queue Created",
+            "message": "Created queue for {mesh_name}.",
+            "details": [
+                "Set output folder and add images",
+                "Use 'Add Image to Queue' to add texture files",
+                "Ready for batch baking"
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "images_added_to_queue": {
+            "category": SUCCESS,
+            "title": "Images Added",
+            "message": "Added {count} images to {mesh_name} queue.",
+            "details": [
+                "Queue now has {total_count} images",
+                "Set output folder if not already done",
+                "Ready for batch baking"
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "image_removed_from_queue": {
+            "category": SUCCESS,
+            "title": "Image Removed",
+            "message": "Removed image from queue.",
+            "details": [
+                "The selected image has been removed",
+                "Queue has been updated"
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "queue_cleared": {
+            "category": SUCCESS,
+            "title": "Queue Cleared",
+            "message": "Cleared queue for {mesh_name}.",
+            "details": [
+                "All images have been removed from the queue",
+                "Queue is now empty"
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "mesh_queue_removed": {
+            "category": SUCCESS,
+            "title": "Mesh Queue Removed",
+            "message": "Removed {mesh_name} from queue.",
+            "details": [
+                "The selected mesh queue has been deleted",
+                "All associated images have been removed"
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "no_queue_selected": {
+            "category": SELECTION,
+            "title": "No Queue Selected",
+            "message": "No queue selected for this operation.",
+            "details": [
+                "Select a mesh queue from the list",
+                "Click on a queue entry to select it",
+                "Then try the operation again"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "no_queue_for_mesh": {
+            "category": VALIDATION,
+            "title": "No Queue Found",
+            "message": "No queue found for {mesh_name}.",
+            "details": [
+                "Create a queue for this mesh first",
+                "Use 'Create Queue for Selected' button",
+                "Then add images to the queue"
+            ],
+            "icon": "ERROR"
+        },
+        
+        "materials_setup_complete": {
+            "category": SUCCESS,
+            "title": "Materials Setup Complete",
+            "message": "Setup materials for {count} objects.",
+            "details": [
+                "Added Baking Material",
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "uv_setup_complete": {
+            "category": SUCCESS,
+            "title": "UV Maps Setup Complete",
+            "message": "Setup UV maps for {count} objects.",
+            "details": [
+                "OG_MAP: original map renamed",
+                "NEW_MAP: new bake map created",
+            ],
+            "icon": "CHECKMARK"
+        },
+        
+        "objects_duplicated": {
+            "category": SUCCESS,
+            "title": "Objects Duplicated",
+            "message": "Duplicated {count} objects to bake collection.",
+            "details": [
+                "Duplicates are now selected and ready for setup",
+                "Use 'Setup UV Maps' and 'Setup Materials' next",
+            ],
+            "icon": "CHECKMARK"
+        },
     }
     
     @staticmethod
@@ -490,8 +901,16 @@ class ErrorManager:
                 main_message = main_message.format(count=kwargs['count'])
             if 'name' in kwargs and '{name}' in main_message:
                 main_message = main_message.format(name=kwargs['name'])
+            if 'mesh_name' in kwargs and '{mesh_name}' in main_message:
+                main_message = main_message.format(mesh_name=kwargs['mesh_name'])
+            if 'total_count' in kwargs and '{total_count}' in main_message:
+                main_message = main_message.format(total_count=kwargs['total_count'])
+            if 'processed_count' in kwargs and '{processed_count}' in main_message:
+                main_message = main_message.format(processed_count=kwargs['processed_count'])
             if 'file_path' in kwargs and '{file_path}' in main_message:
                 main_message = main_message.format(file_path=kwargs['file_path'])
+            if 'z_value' in kwargs and '{z_value}' in main_message:
+                main_message = main_message.format(z_value=kwargs['z_value'])
                 
             layout.label(text=main_message)
             
@@ -529,14 +948,22 @@ class ErrorManager:
             
         msg_data = ErrorManager.MESSAGES[message_key]
         message = kwargs.get('custom_message', msg_data['message'])
-        
+
         # Format message with provided parameters
         if 'count' in kwargs and '{count}' in message:
             message = message.format(count=kwargs['count'])
         if 'name' in kwargs and '{name}' in message:
             message = message.format(name=kwargs['name'])
+        if 'mesh_name' in kwargs and '{mesh_name}' in message:
+            message = message.format(mesh_name=kwargs['mesh_name'])
+        if 'total_count' in kwargs and '{total_count}' in message:
+            message = message.format(total_count=kwargs['total_count'])
+        if 'processed_count' in kwargs and '{processed_count}' in message:
+            message = message.format(processed_count=kwargs['processed_count'])
         if 'file_path' in kwargs and '{file_path}' in message:
             message = message.format(file_path=kwargs['file_path'])
+        if 'z_value' in kwargs and '{z_value}' in message:
+            message = message.format(z_value=kwargs['z_value'])
             
         operator.report({report_type}, message)
 

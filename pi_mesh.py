@@ -1,57 +1,9 @@
 import bpy
 from . import pi_errors
 
-# Legacy popup functions (kept for compatibility)
-def select_obj(self, context):
-    pi_errors.ErrorManager.show_error('no_object_selected')
 
-def exit_edit(self, context):
-    pi_errors.ErrorManager.show_error('exit_edit_mode')
-
-def sfs_not_found(self, context):
-    pi_errors.ErrorManager.show_error('file_not_found',
-                                     custom_message="s4studio_mesh_1 not found.")
-
-def ref_not_found(self, context):
-    pi_errors.ErrorManager.show_error('file_not_found',
-                                     custom_message="REF not found.")
-
-def no_weight_groups(self, context):
-    pi_errors.ErrorManager.show_error('no_weight_groups')
-
-def weight_trans(self, context):
-    pi_errors.ErrorManager.show_success('weights_transferred')
-
-def sub_succ(self, context):
-    pi_errors.ErrorManager.show_success('mesh_subdivided')
-
-def wesmo(self, context):
-    pi_errors.ErrorManager.show_success('weights_smoothed')
-
-def wesmonog(self, context):
-    pi_errors.ErrorManager.show_error('no_weight_groups')
-
-def limwesucc(self, context):
-    pi_errors.ErrorManager.show_success('weights_limited')
-
-def rbmbdsucc(self, context):
-    pi_errors.ErrorManager.show_success('doubles_removed')
-
-def ttqsucc(self, context):
-    pi_errors.ErrorManager.show_success('faces_converted')
-
-def linkrigsucc(self, context):
-    pi_errors.ErrorManager.show_success('rig_linked')
-
-def norig(self, context):
-    pi_errors.ErrorManager.show_error('no_rig_found')
-
-# Legacy helper function
-def display_popup_list(popups):
-    return pi_errors.display_popup_list(popups)
-
-# Remove Doubles
-class rdmbd(bpy.types.Operator):
+# Remove Doubles/Merge by Distance
+class RemoveMergeByDistance(bpy.types.Operator):
     bl_idname = "object.rdmbd"
     bl_label = "Remove Doubles"
     bl_description = "Remove Doubles/Merge by distance"
@@ -76,7 +28,7 @@ class rdmbd(bpy.types.Operator):
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            pi_errors.ErrorManager.show_error('no_object_selected')
+            pi_errors.ErrorManager.show_error('object_hidden')
             return {'CANCELLED'}
         
         # Check if object is a mesh
@@ -105,7 +57,7 @@ class rdmbd(bpy.types.Operator):
         return self.execute(context)
 
 # Tris To Quads
-class quadfa(bpy.types.Operator):
+class TrisToQuads(bpy.types.Operator):
     bl_idname = "object.quadfa"
     bl_label = "Tris to Quads"
     bl_description = "Tris to Quads"
@@ -120,7 +72,7 @@ class quadfa(bpy.types.Operator):
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            pi_errors.ErrorManager.show_error('no_object_selected')
+            pi_errors.ErrorManager.show_error('object_hidden')
             return {'CANCELLED'}
         
         # Check if object is a mesh
@@ -144,7 +96,7 @@ class quadfa(bpy.types.Operator):
         return {'FINISHED'}
 
 # Triangulate Faces
-class trifa(bpy.types.Operator):
+class TriangulateFaces(bpy.types.Operator):
     bl_idname = "object.trifa"
     bl_label = "Triangulate Faces"
     bl_description = "Triangulate Faces"
@@ -159,7 +111,7 @@ class trifa(bpy.types.Operator):
         
         # Check if object is hidden
         if context.active_object.hide_get():
-            pi_errors.ErrorManager.show_error('no_object_selected')
+            pi_errors.ErrorManager.show_error('object_hidden')
             return {'CANCELLED'}
         
         # Check if object is a mesh
@@ -240,15 +192,15 @@ class sii_subdivision(bpy.types.Operator):
 
 # Register all classes
 def register():
-    bpy.utils.register_class(rdmbd)
-    bpy.utils.register_class(quadfa)
-    bpy.utils.register_class(trifa)
+    bpy.utils.register_class(RemoveMergeByDistance)
+    bpy.utils.register_class(TrisToQuads)
+    bpy.utils.register_class(TriangulateFaces)
     bpy.utils.register_class(sii_subdivision)
 
 def unregister():
-    bpy.utils.unregister_class(rdmbd)
-    bpy.utils.unregister_class(quadfa)
-    bpy.utils.unregister_class(trifa)
+    bpy.utils.unregister_class(RemoveMergeByDistance)
+    bpy.utils.unregister_class(TrisToQuads)
+    bpy.utils.unregister_class(TriangulateFaces)
     bpy.utils.unregister_class(sii_subdivision)
 
 if __name__ == "__main__":

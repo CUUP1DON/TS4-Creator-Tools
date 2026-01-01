@@ -120,13 +120,49 @@ class TSCT_OT_load_custom_anim(Operator):
                 if loaded_actions:
                     # Apply the first action to the selected armature
                     first_action = loaded_actions[0]
-                    
-                    # Create animation data if it doesn't exist
+
+                    # Ensure armature is active in the view layer (Blender 4.x requirement)
+                    original_active = context.active_object
+                    context.view_layer.objects.active = armature_obj
+
+                    # Ensure animation data exists
                     if not armature_obj.animation_data:
                         armature_obj.animation_data_create()
-                    
-                    # Apply the action
-                    armature_obj.animation_data.action = first_action
+
+                    # Handle Action Slots for Blender 4.x compatibility
+                    anim_data = armature_obj.animation_data
+                    anim_data.action = first_action
+
+                    # Try action slot assignment (Blender 4.x+)
+                    try:
+                        # Use action_suitable_slots to get an appropriate slot (per Blender docs)
+                        if hasattr(anim_data, 'action_suitable_slots') and anim_data.action_suitable_slots:
+                            anim_data.action_slot = anim_data.action_suitable_slots[0]
+                        # Fallback: manually get the first slot (for Legacy Slots)
+                        elif hasattr(first_action, 'slots') and first_action.slots:
+                            anim_data.action_slot = first_action.slots[0]
+                    except Exception:
+                        # If action slot assignment fails, fall back to legacy method
+                        pass
+
+                    # Force update to ensure the action is properly applied
+                    bpy.context.view_layer.update()
+
+                    # Verify the action was applied
+                    if hasattr(armature_obj.animation_data, 'action_slots'):
+                        if armature_obj.animation_data.action_slot and armature_obj.animation_data.action_slot.action == first_action:
+                            print(f"✓ Action successfully applied to action slot on {armature_obj.name}")
+                        else:
+                            print(f"✗ Failed to apply action to action slot on {armature_obj.name}")
+                    else:
+                        if armature_obj.animation_data.action == first_action:
+                            print(f"✓ Action successfully applied to {armature_obj.name}")
+                        else:
+                            print(f"✗ Failed to apply action to {armature_obj.name}")
+
+                    # Restore original active object if needed
+                    if original_active and original_active != armature_obj:
+                        context.view_layer.objects.active = original_active
                     
                     # Adjust timeline to match animation length
                     if first_action.frame_range:

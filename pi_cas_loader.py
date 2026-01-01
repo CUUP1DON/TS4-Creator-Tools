@@ -1,6 +1,7 @@
 import bpy
 import os
 from bpy.types import Operator
+from .ci_asset_management import show_popup
 
 class TSCT_OT_load_cas(Operator):
     bl_idname = "object.load_cas"
@@ -43,7 +44,7 @@ class TSCT_OT_load_cas(Operator):
                     ('Med', 'Medium', 'Medium length dress'),
                     ('Long', 'Long', 'Long length dress')
                 ]
-            else:  # Adults and Children - all three lengths
+            else:  # Adults and Children - all three dress lengths
                 return [
                     ('Long', 'Long', 'Long length dress'),
                     ('Med', 'Medium', 'Medium length dress'),
@@ -135,10 +136,10 @@ class TSCT_OT_load_cas(Operator):
                     blend_path = fallback_path
                     search_location = "assets folder (fallback)"
                 else:
-                    self.display_popup_error(f"CAS item file not found: {blend_file}\nSearched in: {search_location} and assets folder")
+                    show_popup(f"CAS item file not found: {blend_file}\nSearched in: {search_location} and assets folder", icon='ERROR')
                     return {'CANCELLED'}
             else:
-                self.display_popup_error(f"CAS item file not found: {blend_file}\nSearched in: {search_location}")
+                show_popup(f"CAS item file not found: {blend_file}\nSearched in: {search_location}", icon='ERROR')
                 return {'CANCELLED'}
         
         print(f"Loading {blend_file} from {search_location}: {blend_path}")
@@ -174,15 +175,15 @@ class TSCT_OT_load_cas(Operator):
                 body_type_name = dict(self.body_type_items)[self.body_type]
                 cas_item_name = dict(self.cas_item_items)[self.cas_item]
                 length_name = self.get_length_display_name()
-                self.display_popup_success(f"{body_type_name} {cas_item_name} {length_name} CAS item loaded successfully. Loaded {len(loaded_objects)} objects.")
+                show_popup(f"{body_type_name} {cas_item_name} {length_name} CAS item loaded successfully. Loaded {len(loaded_objects)} objects.")
             else:
-                self.display_popup_error("No objects were loaded from the file.")
+                show_popup("No objects were loaded from the file.", icon='ERROR')
                 return {'CANCELLED'}
-            
+
             return {'FINISHED'}
-            
+
         except Exception as e:
-            self.display_popup_error(f"Error loading CAS item: {str(e)}")
+            show_popup(f"Error loading CAS item: {str(e)}", icon='ERROR')
             return {'CANCELLED'}
     
     def get_blend_filename(self):
@@ -252,15 +253,6 @@ class TSCT_OT_load_cas(Operator):
             ('Skirt', 'Skirt'),
         ]
     
-    def display_popup_error(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='ERROR')
-    
-    def display_popup_success(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='INFO')
 
 # Register and unregister functions
 def register():

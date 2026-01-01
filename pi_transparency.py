@@ -4,6 +4,10 @@ import gpu
 from gpu_extras.batch import batch_for_shader
 from . import pi_errors
 
+# Check Blender version for GPU API compatibility
+BLENDER_VERSION = bpy.app.version
+USE_NEW_GPU_API = BLENDER_VERSION >= (4, 0, 0)
+
 
 # ------------------------------------------------------------------------
 # Strip Layer Utility
@@ -45,19 +49,23 @@ def draw_strip_edges():
 
         if coords:
             # Enable depth testing so lines appear on the mesh surface
-            import gpu
             gpu.state.depth_test_set('LESS_EQUAL')
             gpu.state.blend_set('ALPHA')
-            
+
             # Use cached shader or create new one
             if not _shader_cache:
-                _shader_cache = gpu.shader.from_builtin("3D_UNIFORM_COLOR")
-            
+                if USE_NEW_GPU_API:
+                    # Blender 4.0+ GPU API - use UNIFORM_COLOR instead of 3D_UNIFORM_COLOR
+                    _shader_cache = gpu.shader.from_builtin("UNIFORM_COLOR")
+                else:
+                    # Legacy Blender 3.x GPU API
+                    _shader_cache = gpu.shader.from_builtin("3D_UNIFORM_COLOR")
+
             batch = batch_for_shader(_shader_cache, 'LINES', {"pos": coords})
             _shader_cache.bind()
             _shader_cache.uniform_float("color", (0.7, 0.2, 0.9, 1.0))  # purple
             batch.draw(_shader_cache)
-            
+
             # Reset GPU state
             gpu.state.depth_test_set('NONE')
             gpu.state.blend_set('NONE')

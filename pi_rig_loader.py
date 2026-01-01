@@ -1,6 +1,7 @@
 import bpy
 import os
 from bpy.types import Operator
+from .ci_asset_management import show_popup
 
 class TSCT_OT_load_rig(Operator):
     bl_idname = "object.load_rig"
@@ -17,6 +18,12 @@ class TSCT_OT_load_rig(Operator):
             ('C', 'Child', 'Child rig'),
             ('T', 'Toddler', 'Toddler rig'),
             ('I', 'Infant', 'Infant rig'),
+            ('F_Mermaid', 'Female Mermaid', 'Female Mermaid rig'),
+            ('M_Merman', 'Male Merman', 'Male Merman rig'),
+            ('M_Werewolf', 'Male Werewolf', 'Male Werewolf rig'),
+            ('F_Werewolf', 'Female Werewolf', 'Female Werewolf rig'),
+            ('M_Fairy', 'Male Fairy', 'Male Fairy rig'),
+            ('F_Fairy', 'Female Fairy', 'Female Fairy rig'),
         ],
         default='AM'
     )
@@ -32,14 +39,14 @@ class TSCT_OT_load_rig(Operator):
         addon_dir = os.path.dirname(os.path.realpath(__file__))
         assets_dir = os.path.join(addon_dir, "assets")
         rig_dir = os.path.join(assets_dir, "rig")
-        
+
         # Construct the blend file path
         blend_file = f"{self.rig_type}_Rig.blend"
         blend_path = os.path.join(rig_dir, blend_file)
         
         # Check if file exists
         if not os.path.exists(blend_path):
-            self.display_popup_error(f"Rig file not found: {blend_file}")
+            show_popup(f"Rig file not found: {blend_file}", icon='ERROR')
             return {'CANCELLED'}
         
         # Load the blend file
@@ -72,18 +79,21 @@ class TSCT_OT_load_rig(Operator):
                     print(f"Loaded armature: {obj.name}")
             
             if loaded_armatures:
+                # Select all loaded armatures
+                for obj in loaded_armatures:
+                    obj.select_set(True)
                 # Set the first armature as active
                 context.view_layer.objects.active = loaded_armatures[0]
                 
                 rig_type_name = dict(self.rig_type_items)[self.rig_type]
-                self.display_popup_success(f"{rig_type_name} rig loaded successfully. Loaded {len(loaded_armatures)} armature(s).")
+                show_popup(f"{rig_type_name} rig loaded successfully. Loaded {len(loaded_armatures)} armature(s).")
                 return {'FINISHED'}
             else:
-                self.display_popup_error("No armatures found in the rig file.")
+                show_popup("No armatures found in the rig file.", icon='ERROR')
                 return {'CANCELLED'}
-            
+
         except Exception as e:
-            self.display_popup_error(f"Error loading rig: {str(e)}")
+            show_popup(f"Error loading rig: {str(e)}", icon='ERROR')
             print(f"Full error details: {e}")
             import traceback
             traceback.print_exc()
@@ -97,17 +107,14 @@ class TSCT_OT_load_rig(Operator):
             ('C', 'Child'),
             ('T', 'Toddler'),
             ('I', 'Infant'),
+            ('F_Mermaid', 'Female Mermaid'),
+            ('M_Merman', 'Male Merman'),
+            ('M_Werewolf', 'Male Werewolf'),
+            ('F_Werewolf', 'Female Werewolf'),
+            ('M_Fairy', 'Male Fairy'),
+            ('F_Fairy', 'Female Fairy'),
         ]
     
-    def display_popup_error(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='ERROR')
-    
-    def display_popup_success(self, message):
-        def popup(self, context):
-            self.layout.label(text=message)
-        bpy.context.window_manager.popup_menu(popup, title="Creator Tools", icon='INFO')
 
 # Register and unregister functions
 def register():

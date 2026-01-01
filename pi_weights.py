@@ -2,7 +2,7 @@ import bpy
 from . import pi_errors
 
 # Weight Transfer
-class siiii_weights(bpy.types.Operator):
+class TransferWeights(bpy.types.Operator):
     bl_idname = "object.siiii_weights"
     bl_label = "Weight Transfer"
     bl_description = "Transfer weight data from REF mesh to your mesh"
@@ -99,7 +99,7 @@ class delete_ref_mesh(bpy.types.Operator):
 
 
 # Smooth Weights
-class smoothwe(bpy.types.Operator):
+class SmoothWeights(bpy.types.Operator):
     bl_idname = "object.smoothwe"
     bl_label = "Smooth Weights"
     bl_description = "Smooth weights (use sparingly)"
@@ -182,7 +182,7 @@ class smoothwe(bpy.types.Operator):
 
 
 # Limit Total Weight
-class limwe(bpy.types.Operator):
+class LimitWeights(bpy.types.Operator):
     bl_idname = "object.limwe"
     bl_label = "Limit Weights"
     bl_description = "Limit the number of weights per vertex"
@@ -291,17 +291,17 @@ class limwe(bpy.types.Operator):
 
 # Registration
 def register():
-    bpy.utils.register_class(siiii_weights)
+    bpy.utils.register_class(TransferWeights)
     bpy.utils.register_class(delete_ref_mesh)
-    bpy.utils.register_class(smoothwe)
-    bpy.utils.register_class(limwe)
+    bpy.utils.register_class(SmoothWeights)
+    bpy.utils.register_class(LimitWeights)
 
 
 def unregister():
-    bpy.utils.unregister_class(siiii_weights)
+    bpy.utils.unregister_class(TransferWeights)
     bpy.utils.unregister_class(delete_ref_mesh)
-    bpy.utils.unregister_class(smoothwe)
-    bpy.utils.unregister_class(limwe)
+    bpy.utils.unregister_class(SmoothWeights)
+    bpy.utils.unregister_class(LimitWeights)
 
 
 if __name__ == "__main__":
